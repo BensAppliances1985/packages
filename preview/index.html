@@ -10,209 +10,282 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TBDH0K2M4E');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: a budget band across the top, a filter rail on the left, package
-   cards on the right; each card is a 2x2 grid of the four appliances. */
+/* Kitchen Package Builder — pastel-consumer app style (taste-skill, seed 943993918).
+   One ground, white panels, one 20px card radius stepping down to 10/8/5 inside.
+   Colour budget: the score marks carry the one data hue (cobalt); each appliance kind
+   has one pale tile hue with the dark of its own hue as ink; savings are the positive
+   green; everything else is ink and grey.
+   Grid: 1280 max canvas = 264 rail + 24 gap + 992 results; inside a package card the
+   four appliances sit in 2 x (472) + 24 = 968 + 2 x 12 card padding... see .slots. */
 :root {
-  --bg: #F1F4F6; --surface: #FFFFFF; --sunken: #E7ECF0; --ink: #111A22; --muted: #53616D; --line: #D3DBE2;
-  --accent: #1C4ED6; --accent-soft: #E2E9FC; --on-accent: #FFFFFF;
-  --save: #A9430E; --save-soft: #FBE9DD; --good: #16794A; --warn: #A3271B;
-  --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
-  --body: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
-  --r: 10px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0D1217; --surface: #151C23; --sunken: #1C242D; --ink: #E5EBF0; --muted: #96A3AF; --line: #28323C;
-    --accent: #88A9FF; --accent-soft: #1A2746; --on-accent: #0D1217;
-    --save: #F3A06A; --save-soft: #36231A; --good: #5CCB90; --warn: #FF8A7A; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0D1217; --surface: #151C23; --sunken: #1C242D; --ink: #E5EBF0; --muted: #96A3AF; --line: #28323C;
-  --accent: #88A9FF; --accent-soft: #1A2746; --on-accent: #0D1217;
-  --save: #F3A06A; --save-soft: #36231A; --good: #5CCB90; --warn: #FF8A7A; color-scheme: dark;
+  color-scheme: light;
+  --ground: #f3f5f7; --surface: #ffffff; --raised: #f6f8fa; --active: #e9edf1;
+  --border: #e6e6e6; --rule: #eef0f2; --control: #d6d9dd;
+  --text: #1b1d1f; --muted: #5c6064;
+  --primary: #1b1d1f;
+  --accent: #1d5fd6; --accent-soft: #dcf1ff; --accent-ink: #0a3a80;
+  --positive: #2f7a45; --negative: #c41c29;
+  --pill-positive-bg: #dcfae5; --pill-positive-ink: #04250e;
+  --pill-warning-bg: #fffbeb; --pill-warning-ink: #92400e; --warning-line: #fde68a;
+  --pill-neutral-bg: #eef1f4; --pill-neutral-ink: #3a3d40;
+  /* the four appliance kinds: pale tile, dark ink of the same hue */
+  --range-bg: #fdefd6; --range-ink: #6b4300;
+  --fridge-bg: #dcf1ff; --fridge-ink: #0a3a80;
+  --dw-bg: #dcf6e3; --dw-ink: #14532d;
+  --mw-bg: #fde4ec; --mw-ink: #85173d;
+  --radius-card: 20px; --radius-inner: 12px; --radius-control: 10px; --radius-chip: 999px;
+  --gap: 24px; --pad: 24px; --control-height: 40px;
+  --font: "Manrope", Inter, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); margin: 0; }
-.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 0 48px; }
-h1, h2, h3 { font-family: var(--display); font-variation-settings: 'wdth' 118; text-wrap: balance; margin: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body { background: var(--ground); color: var(--text); font: 400 16px/1.5 var(--font); margin: 0; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px 64px; }
+h1, h2, h3 { margin: 0; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+p { margin: 0; }
 button, select, input { font: inherit; color: inherit; }
-a { color: var(--accent); }
+a { color: var(--accent-ink); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.mono { font-family: var(--mono); }
-.num { font-variant-numeric: tabular-nums; }
+.num, .money, .score { font-variant-numeric: tabular-nums; }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* masthead */
-.mast { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; padding-block: 28px 18px; }
-.mast h1 { font-size: clamp(26px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.01em; }
-.mast h1 .tag { font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: middle; border: 1px solid var(--line); color: var(--muted); border-radius: 99px; padding: 3px 8px; margin-left: 10px; }
-.mast p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
-.stamp { font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.stale { border: 1px solid var(--warn); color: var(--warn); border-radius: var(--r); padding: 10px 14px; margin: 0 0 16px; font-size: 14px; }
-.owner .lim { font-family: var(--mono); font-size: 11px; color: var(--warn); border: 1px solid currentColor; border-radius: 99px; padding: 1px 7px; margin-left: 6px; }
+/* header: the product's name and scope, the freshness stamp on the right */
+.mast { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 32px; align-items: end; padding: 32px 0 20px; }
+.byline { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.mast h1 { font-size: 28px; line-height: 1.15; }
+.tagline { font-size: 16px; color: var(--text); margin-top: 6px; max-width: 60ch; }
+.disc { font-size: 14px; color: var(--muted); margin-top: 4px; max-width: 70ch; }
+.stamp { font-size: 14px; color: var(--muted); text-align: right; }
+.stamp b { color: var(--text); font-weight: 600; }
+.stamp span { display: block; }
+.stale { background: var(--pill-warning-bg); border: 1px solid var(--warning-line); color: var(--pill-warning-ink); border-radius: var(--radius-control); padding: 10px 14px; margin: 0 0 16px; font-size: 14px; }
 
-/* budget band */
-.band { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px 22px; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px 32px; }
-.budget-label { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.budget-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-.budget-val { font-family: var(--display); font-variation-settings: 'wdth' 112; font-weight: 800; font-size: clamp(36px, 5vw, 54px); line-height: 1.05; letter-spacing: -0.02em; }
+/* budget band: the figure, the slider, the presets; savings options and offers beside */
+.band { background: var(--surface); border-radius: var(--radius-card); padding: var(--pad); display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px 40px; }
+.budget-label { font-size: 14px; color: var(--muted); }
+.budget-row { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.budget-val { font-size: 32px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .bracket { color: var(--muted); font-size: 14px; }
-input[type=range] { width: 100%; accent-color: var(--accent); margin: 10px 0 6px; }
-.presets { display: flex; flex-wrap: wrap; gap: 6px; }
-.presets button { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 12px; cursor: pointer; font-variant-numeric: tabular-nums; }
-.presets button[aria-pressed=true] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.toggles { display: grid; gap: 10px; align-content: start; }
+input[type=range] { width: 100%; accent-color: var(--primary); margin: 12px 0 10px; height: 24px; }
+.presets { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.presets::-webkit-scrollbar { display: none; }
+.presets button { flex: none; height: 36px; border: 1px solid var(--control); background: var(--surface); border-radius: var(--radius-control); padding: 0 14px; cursor: pointer; font-weight: 500; font-size: 15px; font-variant-numeric: tabular-nums; }
+.presets button:hover { background: var(--raised); }
+.presets button[aria-pressed=true] { background: var(--primary); color: #fff; border-color: var(--primary); }
+.side { display: grid; gap: 14px; align-content: start; }
 .toggle { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
-.toggle input { margin-top: 4px; accent-color: var(--accent); width: 16px; height: 16px; flex: none; }
-.toggle small { display: block; color: var(--muted); font-size: 13px; }
-.offers { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; border-top: 1px dashed var(--line); padding-top: 14px; }
-.offer { background: var(--save-soft); color: var(--save); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
-.offer b { font-weight: 700; }
+.toggle input { margin: 3px 0 0; accent-color: var(--primary); width: 18px; height: 18px; flex: none; }
+.toggle span { font-weight: 500; }
+.toggle small { display: block; color: var(--muted); font-size: 14px; font-weight: 400; }
+.offers { border-radius: var(--radius-inner); background: var(--raised); }
+.offers > summary { list-style: none; cursor: pointer; padding: 10px 14px; font-size: 15px; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.offers > summary::-webkit-details-marker { display: none; }
+.offers > summary b { font-weight: 600; }
+.offers > summary .more { color: var(--accent-ink); font-size: 14px; white-space: nowrap; }
+.offers[open] > summary .more::after { content: " (hide)"; }
+.offer-list { list-style: none; margin: 0; padding: 0 14px 12px; display: grid; gap: 8px; font-size: 14px; }
+.offer-list li { display: grid; gap: 2px; }
+.offer-list b { font-weight: 600; }
+.offer-list span { color: var(--muted); }
 
-/* layout */
-.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 24px; margin-top: 22px; align-items: start; }
-.rail { position: sticky; top: env(safe-area-inset-top, 0px); max-height: 100vh; overflow: auto; padding-bottom: 12px; }
+/* layout: filters on the ground at the left, the answer on the right */
+.layout { display: grid; grid-template-columns: 264px minmax(0, 1fr); gap: var(--gap); margin-top: var(--gap); align-items: start; }
+.rail { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow: auto; padding: 4px 4px 16px 0; }
 .rail > details > summary { display: none; }
-.fgroup { border-top: 1px solid var(--line); padding-block: 14px; }
+.fgroup { padding-block: 16px; border-top: 1px solid var(--border); }
 .fgroup:first-of-type { border-top: 0; padding-top: 0; }
-.fgroup h3 { font-size: 13px; font-family: var(--mono); font-variation-settings: normal; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.frow { margin-top: 8px; }
-.frow > label, .frow > .flabel { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.fgroup h3 { font-size: 16px; margin-bottom: 8px; }
+.frow { margin-top: 10px; }
+.frow > label, .frow > .flabel { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
-.chip[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.chip { border: 1px solid var(--control); background: var(--surface); border-radius: var(--radius-chip); padding: 4px 12px; font-size: 14px; cursor: pointer; min-height: 32px; }
+.chip:hover { background: var(--raised); }
+.chip[aria-pressed=true] { background: var(--primary); border-color: var(--primary); color: #fff; }
 .chip.brand[aria-pressed=false] { text-decoration: line-through; color: var(--muted); background: transparent; }
-select { width: 100%; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
-.check { display: flex; gap: 8px; align-items: center; font-size: 14px; margin-top: 6px; cursor: pointer; }
-.check input { accent-color: var(--accent); }
-.reset { margin-top: 10px; border: 0; background: none; color: var(--accent); padding: 0; cursor: pointer; text-decoration: underline; }
+select { width: 100%; height: var(--control-height); border: 1px solid var(--control); background: var(--surface); border-radius: var(--radius-control); padding: 0 10px; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 15px; margin-top: 10px; cursor: pointer; }
+.check input { accent-color: var(--primary); width: 18px; height: 18px; }
+.reset { margin-top: 12px; border: 0; background: none; color: var(--accent-ink); padding: 0; cursor: pointer; font-weight: 600; font-size: 15px; }
 
-/* results */
-.rhead { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 16px; margin-bottom: 12px; }
-.rhead h2 { font-size: 22px; font-weight: 750; }
-.rhead .note { color: var(--muted); font-size: 13px; }
-.rule-note { background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: 13px; margin-bottom: 12px; }
-.pkg { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); margin-bottom: 18px; overflow: hidden; }
-.pkg-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px 22px; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--line); }
-.rank { font-family: var(--mono); font-weight: 600; font-size: 13px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--sunken); }
-.pkg:first-child .rank { background: var(--ink); color: var(--bg); }
-.pkg-brand h3 { font-size: 22px; font-weight: 800; line-height: 1.15; }
-.finish { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
-.sw { width: 12px; height: 12px; border-radius: 50%; border: 1px solid var(--line); display: inline-block; }
-.custom-tag { font-family: var(--mono); font-size: 11px; color: var(--save); margin-left: 8px; }
-.kpi { text-align: right; }
-.kpi b { display: block; font-family: var(--display); font-variation-settings: 'wdth' 110; font-size: 26px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.kpi small { color: var(--muted); font-size: 12px; }
-.kpi .sv { color: var(--save); font-size: 12px; display: block; }
-.pkg-perks { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 18px 0; }
-.perk { font-size: 12px; border-radius: 6px; padding: 3px 8px; background: var(--save-soft); color: var(--save); }
-.perk.info { background: var(--sunken); color: var(--muted); }
-.perk.warn { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
-.perk button { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: 12px; }
-.slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); margin-top: 10px; border-top: 1px solid var(--line); }
-.slot { background: var(--surface); padding: 14px 18px 14px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.slot-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.cat { display: inline-flex; gap: 6px; align-items: center; font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.cat svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-.sc { display: inline-flex; align-items: center; gap: 8px; }
-.sc b { font-family: var(--mono); font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
-.bar { width: 64px; height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; display: inline-block; }
-.bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
-.model { font-family: var(--mono); font-weight: 600; font-size: 15px; }
-.model .ob { font-family: var(--body); font-weight: 500; color: var(--save); font-size: 13px; }
-.name { font-size: 14px; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.specs { display: flex; flex-wrap: wrap; gap: 4px; }
-.specs span { font-size: 12px; background: var(--sunken); border-radius: 5px; padding: 1px 7px; color: var(--muted); }
-.owner { font-size: 13px; color: var(--muted); }
-.owner .star { color: var(--save); }
-.slot-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 4px; flex-wrap: wrap; }
-.price b { font-size: 17px; font-variant-numeric: tabular-nums; }
-.price s { color: var(--muted); font-size: 13px; margin-left: 6px; }
-.price .tag { font-size: 11px; color: var(--save); margin-left: 6px; font-family: var(--mono); }
-.acts { display: flex; gap: 8px; align-items: center; }
-.btn { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 8px; padding: 5px 12px; cursor: pointer; font-weight: 600; font-size: 13px; }
-.btn:hover { background: var(--accent-soft); }
-.btn.solid { background: var(--accent); color: var(--on-accent); }
-.lowes { font-size: 13px; }
-.others { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-.others > h3 { font-size: 16px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
-.orow { border-top: 1px solid var(--line); }
-.orow:first-of-type { border-top: 0; }
-.orow > summary { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 10px 18px; cursor: pointer; list-style: none; }
+/* results: the title row says the finding; the key says what a score is */
+.rhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 24px; align-items: end; margin-bottom: 16px; }
+.rhead h2 { font-size: 20px; line-height: 1.3; }
+.finding { font-size: 16px; grid-column: 1; }
+.rhead .note { color: var(--muted); font-size: 14px; text-align: right; grid-row: 1 / span 2; grid-column: 2; align-self: end; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; font-size: 14px; color: var(--muted); margin: -4px 0 16px; }
+.key .meter { width: 80px; }
+.rule-note { background: var(--raised); border-radius: var(--radius-inner); padding: 10px 14px; font-size: 14px; margin-bottom: 16px; }
+
+/* a package: name and figures, the budget track, perks, the four appliances */
+.pkg { background: var(--surface); border-radius: var(--radius-card); margin-bottom: var(--gap); padding: var(--pad); }
+.pkg-head { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 32px; align-items: center; }
+.rank { font-size: 16px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 1.2em; }
+.pkg-brand h3 { font-size: 24px; line-height: 1.2; }
+.finish { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--muted); margin-top: 2px; }
+.sw { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); display: inline-block; flex: none; }
+.custom-tag { font-size: 13px; font-weight: 600; background: var(--pill-neutral-bg); color: var(--pill-neutral-ink); border-radius: var(--radius-chip); padding: 2px 10px; margin-left: 10px; vertical-align: 3px; white-space: nowrap; }
+.fig { text-align: right; }
+.fig b { display: block; font-size: 32px; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fig small { display: block; color: var(--muted); font-size: 14px; }
+.fig .sv { color: var(--positive); font-size: 14px; font-weight: 600; display: block; }
+.fig.score b { color: var(--accent-ink); }
+.fig .meter { margin: 6px 0 2px auto; }
+.meter { display: block; width: 96px; height: 6px; border-radius: 999px; background: var(--active); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+/* the signature: how much of the budget this package uses */
+.track { margin-top: 20px; }
+.track-bar { position: relative; height: 10px; border-radius: 999px; background: var(--active); }
+.track-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--primary); }
+.track-bar .over { position: absolute; top: 0; bottom: 0; border-radius: 0 999px 999px 0; background: var(--negative); }
+.track-bar .cap { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--text); }
+.track-txt { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.track-txt b { color: var(--text); font-weight: 600; }
+.track-txt .left { color: var(--positive); font-weight: 600; }
+.track-txt .overby { color: var(--negative); font-weight: 600; }
+.pkg-perks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.perk { font-size: 14px; border-radius: var(--radius-chip); padding: 3px 12px; background: var(--pill-positive-bg); color: var(--pill-positive-ink); white-space: nowrap; }
+.perk.info { background: var(--pill-neutral-bg); color: var(--pill-neutral-ink); }
+.perk.warn { background: #ffedea; color: #831c1e; }
+.perk button { border: 0; background: none; color: inherit; text-decoration: underline; cursor: pointer; padding: 0; font-size: 14px; font-weight: 600; }
+.all4 { display: inline-flex; align-items: center; height: var(--control-height); margin-top: 16px; padding: 0 16px; border-radius: var(--radius-control); background: var(--primary); color: #fff; font-weight: 600; text-decoration: none; }
+.slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.slot { background: var(--raised); border-radius: var(--radius-inner); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.slot-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.slot-media { background: var(--surface); border-radius: 8px; height: 148px; display: grid; place-items: center; margin-bottom: 4px; }
+.slot-media img { max-width: 90%; max-height: 132px; object-fit: contain; }
+.kind { display: inline-flex; align-items: center; font-size: 14px; font-weight: 600; border-radius: var(--radius-chip); padding: 2px 12px; white-space: nowrap; }
+.kind.range { background: var(--range-bg); color: var(--range-ink); }
+.kind.refrigerator { background: var(--fridge-bg); color: var(--fridge-ink); }
+.kind.dishwasher { background: var(--dw-bg); color: var(--dw-ink); }
+.kind.microwave { background: var(--mw-bg); color: var(--mw-ink); }
+.sc { display: inline-flex; align-items: center; gap: 10px; }
+.sc b { font-size: 20px; font-weight: 600; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.sc .meter { width: 56px; }
+.model { font-size: 16px; font-weight: 600; }
+.model .ob { font-size: 13px; font-weight: 600; background: var(--pill-neutral-bg); color: var(--pill-neutral-ink); border-radius: var(--radius-chip); padding: 1px 8px; margin-left: 6px; vertical-align: 2px; }
+.name { font-size: 15px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.specs { display: flex; flex-wrap: wrap; gap: 6px; }
+.specs span { font-size: 13px; background: var(--surface); border-radius: 5px; padding: 1px 8px; color: var(--pill-neutral-ink); white-space: nowrap; }
+.owner { font-size: 14px; color: var(--muted); }
+.owner b { color: var(--text); font-weight: 600; }
+.owner .lim { font-size: 13px; font-weight: 600; background: var(--pill-warning-bg); color: var(--pill-warning-ink); border-radius: var(--radius-chip); padding: 1px 8px; margin-left: 6px; white-space: nowrap; }
+.slot-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; padding-top: 6px; flex-wrap: wrap; }
+.price b { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.price s { color: var(--muted); font-size: 14px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.price .tag { font-size: 13px; font-weight: 600; background: var(--pill-positive-bg); color: var(--pill-positive-ink); border-radius: var(--radius-chip); padding: 1px 8px; margin-left: 8px; vertical-align: 2px; }
+.acts { display: flex; gap: 6px; align-items: center; }
+.btn { height: 36px; border: 1px solid var(--control); color: var(--text); background: var(--surface); border-radius: var(--radius-control); padding: 0 12px; cursor: pointer; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
+.btn:hover { border-color: var(--text); }
+.btn:active { transform: translateY(1px); }
+.btn.text { border-color: transparent; background: transparent; color: var(--accent-ink); padding: 0 8px; }
+.btn.text:hover { background: var(--surface); }
+.btn.solid { background: var(--primary); border-color: var(--primary); color: #fff; }
+.others { background: var(--surface); border-radius: var(--radius-card); padding: 8px 0; }
+.others > h3 { font-size: 20px; padding: 16px var(--pad) 8px; }
+.orow > summary { display: grid; grid-template-columns: 28px minmax(0, 1fr) 96px 110px 20px; gap: 16px; align-items: center; min-height: 56px; padding: 0 var(--pad); cursor: pointer; list-style: none; border-top: 1px solid var(--rule); }
 .orow > summary::-webkit-details-marker { display: none; }
-.orow > summary .b { font-weight: 700; }
-.orow > summary .f { color: var(--muted); font-size: 13px; margin-left: 6px; font-weight: 400; }
-.orow > summary .s, .orow > summary .t { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
-.orow[open] > summary { background: var(--sunken); }
-.orow .pkg { border: 0; border-radius: 0; margin: 0; }
-.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--r); padding: 22px; }
-.empty h3 { font-size: 18px; margin-bottom: 6px; }
+.orow > summary:hover { background: var(--raised); }
+.orow > summary .b { font-weight: 600; }
+.orow > summary .f { color: var(--muted); font-size: 14px; margin-left: 8px; }
+.orow > summary .s { text-align: right; color: var(--accent-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.orow > summary .t { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.orow > summary .chev { color: var(--muted); transition: transform .15s ease; }
+.orow[open] > summary .chev { transform: rotate(90deg); }
+.orow .pkg { margin: 0 12px 12px; background: var(--raised); }
+.orow .pkg .slot { background: var(--surface); }
+.empty { background: var(--surface); border: 1px dashed var(--control); border-radius: var(--radius-card); padding: var(--pad); }
+.empty h3 { font-size: 20px; margin-bottom: 6px; }
 
-/* swap dialog */
-dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; background: var(--surface); color: var(--ink); width: min(860px, calc(100vw - 24px)); max-height: calc(100vh - 40px); }
-dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
-.dlg-head { padding: 16px 20px; border-bottom: 1px solid var(--line); display: grid; gap: 10px; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+/* swap dialog (it floats, so it may cast a shadow) */
+dialog { border: 0; border-radius: var(--radius-card); padding: 0; background: var(--surface); color: var(--text); width: min(880px, calc(100vw - 24px)); max-height: calc(100vh - 40px); box-shadow: 0 24px 64px rgba(0,0,0,.22); } /* taste-skill-ignore: the dialog floats */
+dialog::backdrop { background: rgba(15, 18, 22, 0.5); }
+.dlg-head { padding: 20px var(--pad) 16px; display: grid; gap: 12px; position: sticky; top: 0; background: var(--surface); z-index: 1; border-bottom: 1px solid var(--border); }
 .dlg-title { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .dlg-title h3 { font-size: 20px; }
-.dlg-title p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
-.x { border: 0; background: var(--sunken); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 18px; line-height: 1; flex: none; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.seg button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; cursor: pointer; }
-.seg button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
+.dlg-title p { margin-top: 2px; color: var(--muted); font-size: 14px; }
+.x { border: 0; background: var(--active); width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; line-height: 1; flex: none; }
+.seg { display: inline-flex; background: var(--active); border-radius: var(--radius-control); padding: 3px; gap: 2px; }
+.seg button { border: 0; background: transparent; height: 30px; padding: 0 12px; font-size: 14px; font-weight: 500; cursor: pointer; border-radius: 8px; }
+.seg button[aria-pressed=true] { background: var(--surface); }
 .dlg-ctrls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
-.mix-note { font-size: 12px; color: var(--save); }
-.alts { list-style: none; margin: 0; padding: 0; }
-.alts li { display: grid; grid-template-columns: minmax(0, 1fr) 92px 120px 76px; gap: 12px; align-items: center; padding: 12px 20px; border-top: 1px solid var(--line); }
+.mix-note { font-size: 14px; color: var(--pill-warning-ink); }
+.alts { list-style: none; margin: 0; padding: 0 0 8px; }
+.alts li { display: grid; grid-template-columns: minmax(0, 1fr) 96px 132px 88px; gap: 16px; align-items: center; padding: 14px var(--pad); border-top: 1px solid var(--rule); }
 .alts li:first-child { border-top: 0; }
-.alts li.cur { background: var(--accent-soft); }
+.alts li.cur { background: var(--raised); }
 .alt-main { min-width: 0; }
 .alt-main .name { -webkit-line-clamp: 1; }
+.alt-main .specs span { background: var(--raised); }
 .alt-num { text-align: right; font-variant-numeric: tabular-nums; }
-.alt-num b { display: block; font-family: var(--mono); font-weight: 600; }
-.alt-num small { display: block; color: var(--muted); font-size: 12px; }
-.up { color: var(--good); }
-.down { color: var(--warn); }
-.over { color: var(--warn); font-size: 11px; display: block; }
+.alt-num b { display: block; font-weight: 600; }
+.alt-num.score b { color: var(--accent-ink); }
+.alt-num small { display: block; color: var(--muted); font-size: 13px; }
+.up { color: var(--positive) !important; }
+.down { color: var(--negative) !important; }
+.over { color: var(--negative); font-size: 13px; display: block; }
 .alts .btn { justify-self: end; }
-.alts .btn[disabled] { border-color: var(--line); color: var(--muted); cursor: default; background: transparent; }
+.alts .btn[disabled] { color: var(--muted); cursor: default; background: var(--raised); border-color: var(--raised); }
 
-/* footer */
-.foot { margin-top: 30px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.foot section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; }
-.foot h3 { font-size: 16px; margin-bottom: 8px; }
-.foot ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 6px; }
-.foot .proto { border-style: dashed; }
+/* footer: how packages are picked, about the prices, the legal line */
+.foot { margin-top: 48px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 48px; background: var(--surface); border-radius: var(--radius-card); padding: var(--pad); }
+.foot section { min-width: 0; }
+.foot h3 { font-size: 20px; margin-bottom: 10px; }
+.foot ul { margin: 0; padding-left: 20px; font-size: 15px; display: grid; gap: 8px; }
+.foot .legal { grid-column: 1 / -1; font-size: 14px; color: var(--muted); padding-top: 16px; margin-top: 8px; border-top: 1px solid var(--rule); }
 
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
-  .rail { position: static; max-height: none; overflow: visible; }
-  .rail > details { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 0 16px; }
-  .rail > details > summary { display: block; padding: 12px 0; cursor: pointer; font-weight: 700; }
-  .rail > details[open] { padding-bottom: 12px; }
+  .rail { position: static; max-height: none; overflow: visible; padding: 0; }
+  .rail > details { background: var(--surface); border-radius: var(--radius-card); padding: 0 var(--pad); }
+  .rail > details > summary { display: flex; justify-content: space-between; align-items: center; min-height: 52px; cursor: pointer; font-weight: 600; list-style: none; }
+  .rail > details > summary::-webkit-details-marker { display: none; }
+  .rail > details > summary::after { content: "Show"; color: var(--accent-ink); font-size: 15px; }
+  .rail > details[open] > summary::after { content: "Hide"; }
+  .rail > details[open] { padding-bottom: 16px; }
   .band { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
   .foot { grid-template-columns: minmax(0, 1fr); }
+  .pkg-head { grid-template-columns: minmax(0, 1fr) auto; }
+  .pkg-head .fig.score { grid-column: 2; grid-row: 1; }
+  .pkg-head .fig.total { grid-column: 1 / -1; text-align: left; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; margin-top: 8px; }
+  .pkg-head .fig.total b { font-size: 28px; }
+  .slots { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
 @media (max-width: 640px) {
-  .wrap { padding-inline: 16px; }
-  .slots { grid-template-columns: minmax(0, 1fr); }
-  .pkg-head { grid-template-columns: auto minmax(0, 1fr); }
-  .pkg-head .kpi { text-align: left; }
+  :root { --pad: 16px; --gap: 16px; }
+  .wrap { padding: 0 16px 48px; }
+  .mast { grid-template-columns: minmax(0, 1fr); padding: 20px 0 14px; }
+  .mast h1 { font-size: 24px; }
+  .stamp { text-align: left; }
+  .band { padding: 16px; gap: 12px; }
+  .budget-val { font-size: 28px; }
+  .toggle small { display: none; }
+  .side { gap: 10px; }
+  .stamp span { display: inline; }
+  .stamp span + span::before { content: " · "; }
+  .mast { padding: 16px 0 12px; gap: 6px; }
+  .disc { font-size: 13px; }
+  .tagline { font-size: 15px; }
+  .perk { white-space: normal; }
+  .rhead { grid-template-columns: minmax(0, 1fr); }
+  .rhead .note { grid-row: auto; grid-column: 1; text-align: left; }
+  .pkg-brand h3 { font-size: 20px; }
+  .fig b { font-size: 26px; }
+  .slot { padding: 14px; }
   .alts li { grid-template-columns: minmax(0, 1fr) auto; }
   .alts li .alt-main { grid-column: 1 / -1; }
   .alts li .alt-num { text-align: left; }
-  .orow > summary { grid-template-columns: 24px minmax(0, 1fr) auto; }
+  .orow > summary { grid-template-columns: 22px minmax(0, 1fr) auto 16px; gap: 12px; padding: 0 16px; }
   .orow > summary .s { display: none; }
+  .orow .pkg { margin: 0 8px 8px; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .bar i { transition: width 0.25s ease; }
+  .meter i, .track-bar .fill { transition: width .25s ease; }
+  .chip, .presets button, .btn, .seg button { transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
 }
-.mast .byline { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
-.mast .disc { font-size: 13px; margin-top: 8px; }
-.all4 { display: inline-block; margin: 10px 18px 0; font-weight: 600; font-size: 14px; color: var(--accent); }
-.foot .legal { grid-column: 1 / -1; background: none; border: 0; padding: 0 4px; font-size: 13px; color: var(--muted); }
 /* Brand layer (site/brand.json, inlined by build_prototype.py) */
 
 </style>
@@ -224,7 +297,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
     <div>
       <p class="byline">Ben&#x27;s Appliances</p>
       <h1>Kitchen Package Builder</h1>
-      <p>The best one-brand range, refrigerator, dishwasher and microwave for your budget, built only from appliances sold at Lowe&#x27;s.</p>
+      <p class="tagline">The best one-brand range, refrigerator, dishwasher and microwave for your budget, built only from appliances sold at Lowe&#x27;s.</p>
       <p class="disc">When you shop through retailer links on our site, we earn a commission. Scores are our own.</p>
     </div>
     <div class="stamp" id="stamp"></div>
@@ -241,19 +314,19 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
       <input type="range" id="budget" min="2000" max="15000" step="100" value="5000" aria-label="Budget in dollars">
       <div class="presets" id="presets"></div>
     </div>
-    <div class="toggles">
+    <div class="side">
       <label class="toggle"><input type="checkbox" id="useBundles" checked>
-        <span>Apply Lowe's bundle savings<small>Buy-more-save-more discounts count toward the package price.</small></span></label>
+        <span>Count Lowe's bundle savings<small>Buy-more-save-more discounts come off the package price.</small></span></label>
       <label class="toggle"><input type="checkbox" id="useFloor" checked>
-        <span>Use most of my budget<small>Show packages from 85% of the budget up to 5% over. Turn off to see anything under it.</small></span></label>
+        <span>Use most of my budget<small>Packages from 85% of it to 5% over. Off shows anything under it.</small></span></label>
+      <details class="offers" id="offers"></details>
     </div>
-    <div class="offers" id="offers"></div>
   </section>
 
   <div class="layout">
     <aside class="rail" aria-label="Filters">
       <details id="filtersBox" open>
-        <summary>Filters</summary>
+        <summary>Filters: kind of range, fridge size, noise, finish, brands</summary>
         <div id="filters"></div>
       </details>
     </aside>
@@ -261,7 +334,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
   </div>
 
   <footer class="foot">
-    <section>
+    <section id="how">
       <h3>How packages are picked</h3>
       <ul>
         <li>All four appliances are one brand and one finish, so the kitchen matches. GE Profile, Frigidaire Gallery and LG STUDIO count as their own brands.</li>
@@ -587,16 +660,9 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
   var signedMoney = function (n) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + money(Math.abs(n)); };
 
   var CAT = { range: 'Range', refrigerator: 'Refrigerator', dishwasher: 'Dishwasher', microwave: 'Microwave' };
-  var ICON = {
-    range: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><circle cx="8.5" cy="6.5" r="1.4"/><circle cx="15.5" cy="6.5" r="1.4"/><rect x="7" y="11" width="10" height="6.5" rx="1"/></svg>',
-    refrigerator: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="1.5"/><path d="M6 9.5h12M9 5.5v2M9 12v3.5"/></svg>',
-    dishwasher: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 7.5h16M9 5.3h6M9 11.5h6"/></svg>',
-    microwave: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="1.5"/><rect x="5" y="8" width="10" height="8" rx="0.8"/><path d="M18 9v.01M18 12v.01M18 15v.01"/></svg>'
-  };
   var SWATCH = {
-    'stainless': 'linear-gradient(135deg,#dfe4e8,#9ea7af)', 'black stainless': 'linear-gradient(135deg,#5b5f64,#2c2f33)',
-    'white': '#ffffff', 'black': '#14171a', 'slate': '#6c7073', 'matte black': '#26282a', 'matte white': '#f1f0eb',
-    'white glass': 'linear-gradient(135deg,#ffffff,#e4e8ec)', 'juniper': '#3e5a4f', 'black slate': '#33383c',
+    'stainless': '#c3cad1', 'black stainless': '#45494e', 'white': '#ffffff', 'black': '#14171a', 'slate': '#6c7073',
+    'matte black': '#26282a', 'matte white': '#f1f0eb', 'white glass': '#f4f6f8', 'juniper': '#3e5a4f', 'black slate': '#33383c',
     'platinum glass': '#cfd2d4', 'morning blue': '#8aa7c4', 'biscuit': '#efe5cf', 'bisque': '#efe2c9', 'black ore': '#3a3836'
   };
   var RANGE_STYLE = { 'gas': 'Gas', 'electric smoothtop': 'Electric smoothtop', 'electric coil': 'Electric coil', 'induction': 'Induction', 'dual fuel': 'Dual fuel' };
@@ -707,7 +773,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
   /* ---------- budget band ---------- */
   var PRESETS = [2500, 3500, 5000, 7500, 10000];
   function buildBand() {
-    $('#presets').innerHTML = PRESETS.map(function (p) { return '<button type="button" data-cap="' + p + '">Under ' + money(p) + '</button>'; }).join('');
+    $('#presets').innerHTML = PRESETS.map(function (p) { return '<button type="button" data-cap="' + p + '" aria-label="Under ' + money(p) + '">' + money(p) + '</button>'; }).join('');
     $('#presets').addEventListener('click', function (e) {
       var b = e.target.closest('button'); if (!b) return;
       state.cap = Number(b.dataset.cap); $('#budget').value = state.cap; update();
@@ -718,18 +784,22 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
 
     var offers = Object.keys(DATA.bundles || {}).map(function (id) {
       var b = DATA.bundles[id];
-      return '<span class="offer"><b>' + esc(b.label) + ':</b> ' + b.tiers.slice(0, 3).map(function (t) { return 'buy ' + t.qty + ', save ' + money(t.off); }).join(' · ') +
-        (b.tiers.length > 3 ? ' and more' : '') + ' (through ' + day(b.ends) + ')</span>';
+      return '<li><b>' + esc(b.label) + '</b><span>' + b.tiers.map(function (t) { return 'buy ' + t.qty + ', save ' + money(t.off); }).join(' · ') +
+        ' · through ' + day(b.ends) + '</span></li>';
     });
-    (DATA.perks || []).forEach(function (p) { offers.push('<span class="offer"><b>' + esc(p.label) + '</b> on ' + money(p.min_spend) + '+ (through ' + day(p.ends) + ')</span>'); });
-    $('#offers').innerHTML = offers.length ? offers.join('') : '';
-    $('#offers').hidden = !offers.length;
+    var perkRows = (DATA.perks || []).map(function (p) { return '<li><b>' + esc(p.label) + '</b><span>On ' + money(p.min_spend) + ' or more · through ' + day(p.ends) + '</span></li>'; });
+    var nB = offers.length, nP = perkRows.length;
+    $('#offers').innerHTML = (nB + nP) ? '<summary><span><b>' + (nB ? nB + ' bundle offer' + (nB === 1 ? '' : 's') : '') + (nB && nP ? ' and ' : '') +
+      (nP ? nP + ' perk' + (nP === 1 ? '' : 's') : '') + '</b> at Lowe’s this week</span><span class="more">Details</span></summary><ul class="offer-list">' +
+      offers.concat(perkRows).join('') + '</ul>' : '';
+    $('#offers').hidden = !(nB + nP);
 
     var f = DATA.prices_fetched ? day(DATA.prices_fetched) + ', ' + DATA.prices_fetched.slice(0, 4) : 'n/a';
     var ends = {};
     DATA.items.forEach(function (it) { if (it.sale_ends) ends[it.sale_ends] = (ends[it.sale_ends] || 0) + 1; });
     var main = Object.keys(ends).sort(function (a, b) { return ends[b] - ends[a]; })[0];
-    $('#stamp').textContent = "Lowe's prices from " + f + ' · ZIP ' + (DATA.zip || '') + (main && !DATA.stale ? ' · most sales end ' + day(main) : '');
+    $('#stamp').innerHTML = '<span>Lowe’s prices from <b>' + esc(f) + '</b> · ZIP ' + esc(DATA.zip || '') + '</span>' +
+      (main && !DATA.stale ? '<span>Most sale prices run through <b>' + esc(day(main)) + '</b></span>' : '');
     if (DATA.stale) {
       var gone = [];
       if (DATA.stale.items) gone.push(DATA.stale.items + ' sale price' + (DATA.stale.items === 1 ? '' : 's') + ' now shown at the regular price');
@@ -779,25 +849,42 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
     return b;
   }
 
+  var meter = function (v) { return '<span class="meter" aria-hidden="true"><i style="width:' + Math.max(0, Math.min(100, v)) + '%"></i></span>'; };
+  var ORD = ['Highest', 'Second-highest', 'Third-highest'];
+
   function slotHTML(it, pkgBrand, pkgFinish) {
     var sale = it.was && it.was > it.price;
     var off = it.brand !== pkgBrand ? ' <span class="ob">' + esc(it.brand) + '</span>' : (it.finish !== pkgFinish ? ' <span class="ob">' + esc(cap1(it.finish)) + '</span>' : '');
     return '<div class="slot">' +
-      '<div class="slot-top"><span class="cat">' + ICON[it.cat] + CAT[it.cat] + '</span>' +
-      '<span class="sc" title="Score out of 100"><span class="bar"><i style="width:' + it.score + '%"></i></span><b>' + it.score.toFixed(1) + '</b></span></div>' +
+      // Licensed product photos (e.g. a product-data feed) show here when the data carries one.
+      (it.image ? '<div class="slot-media"><img src="' + esc(it.image) + '" alt="' + esc(it.brand + ' ' + it.model) + '" loading="lazy"></div>' : '') +
+      '<div class="slot-top"><span class="kind ' + it.cat + '">' + CAT[it.cat] + '</span>' +
+        '<span class="sc" title="Score ' + it.score.toFixed(1) + ' out of 100"><b>' + it.score.toFixed(1) + '</b>' + meter(it.score) + '</span></div>' +
       '<div class="model">' + esc(it.model) + off + '</div>' +
       '<div class="name">' + esc(it.name) + '</div>' +
-      '<div class="specs">' + specBits(it).map(function (s) { return '<span>' + esc(s) + '</span>'; }).join('') + '</div>' +
-      '<div class="owner">' + (it.rating ? '<span class="star">★</span> ' + it.rating.toFixed(1) + ' · ' : '') + it.reviews.toLocaleString('en-US') + ' reviews' +
+      '<div class="specs">' + specBits(it).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
+      '<div class="owner">' + (it.rating ? 'Owners rate it <b>' + it.rating.toFixed(1) + '</b> of 5 · ' : '') + it.reviews.toLocaleString('en-US') + ' reviews' +
         (it.recommend ? ' · ' + Math.round(it.recommend) + '% recommend' : '') +
         (E.limitedReviews(it, DATA) ? '<span class="lim" title="Fewer reviews than the models we consider proven, so this rating is less certain">Limited reviews</span>' : '') + '</div>' +
       '<div class="slot-foot"><div class="price"><b>' + money(it.price) + '</b>' + (sale ? '<s>' + money(it.was) + '</s>' : '') +
-        (it.bundle && state.bundles && DATA.bundles[it.bundle] ? '<span class="tag">BUNDLE</span>' : '') + '</div>' +
-      '<div class="acts"><button class="btn" type="button" data-swap="' + it.cat + '" data-brand="' + esc(pkgBrand) + '">Swap</button>' +
+        (it.bundle && state.bundles && DATA.bundles[it.bundle] ? '<span class="tag">Bundle</span>' : '') + '</div>' +
+      '<div class="acts"><button class="btn text" type="button" data-swap="' + it.cat + '" data-brand="' + esc(pkgBrand) + '">Swap</button>' +
       // Lowe's bans masking or redirecting: the shoplowes.me link is the href itself.
-      '<a class="lowes" href="' + esc(it.affiliate_url || it.url) + '" target="_blank" rel="sponsored noopener" data-ga="product" data-cat="' + it.cat +
-        '" data-model="' + esc(it.model) + '" data-brand="' + esc(pkgBrand) + '">Lowe’s ↗</a></div></div>' +
+      '<a class="btn" href="' + esc(it.affiliate_url || it.url) + '" target="_blank" rel="sponsored noopener" data-ga="product" data-cat="' + it.cat +
+        '" data-model="' + esc(it.model) + '" data-brand="' + esc(pkgBrand) + '">View at Lowe’s</a></div></div>' +
     '</div>';
+  }
+
+  // The signature: how much of the budget this package uses, on a track as long as the budget's top.
+  function trackHTML(total) {
+    var cap = state.cap, top = Math.max(state.res.hi, total), pct = function (v) { return (100 * v / top).toFixed(2) + '%'; };
+    var left = Math.round(cap - total);
+    return '<div class="track"><div class="track-bar" role="img" aria-label="' + esc(money(total) + ' of a ' + money(cap) + ' budget') + '">' +
+        '<span class="fill" style="width:' + pct(Math.min(total, cap)) + '"></span>' +
+        (total > cap ? '<span class="over" style="left:' + pct(cap) + ';width:' + pct(total - cap) + '"></span>' : '') +
+        '<span class="cap" style="left:calc(' + pct(cap) + ' - 1px)"></span></div>' +
+      '<div class="track-txt"><span>Uses <b>' + money(total) + '</b> of your ' + money(cap) + ' budget</span>' +
+        (left >= 0 ? '<span class="left">' + money(left) + ' left</span>' : '<span class="overby">' + money(-left) + ' over</span>') + '</div></div>';
   }
 
   function pkgHTML(p, rank) {
@@ -812,20 +899,24 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
       if (could === 1) perks.push('<span class="perk info">1 bundle-eligible model; a second one saves more</span>');
     }
     (DATA.perks || []).forEach(function (k) { if (d.total >= k.min_spend) perks.push('<span class="perk info">' + esc(k.label) + '</span>'); });
-    if (d.total > state.res.hi) perks.push('<span class="perk warn">' + money(d.total - state.res.hi) + ' over your budget</span>');
-    if (custom) perks.push('<span class="perk info">Customized · <button type="button" data-reset="' + esc(p.brand) + '">Reset to our pick</button></span>');
+    if (custom) perks.push('<span class="perk info">Customized · <button type="button" data-reset="' + esc(p.brand) + '">Back to our pick</button></span>');
     var orig = custom ? E.describe(p.items, DATA, state.bundles) : null;
     // The same four SKUs as one of Lowe's own packages: its page adds all four to the cart.
     var gr = (DATA.lowes_packages || {})[items.map(function (it) { return it.id; }).sort().join(',')];
     var all4 = gr ? '<a class="all4" href="' + esc(gr.affiliate_url || gr.url) + '" target="_blank" rel="sponsored noopener" data-ga="package" data-brand="' +
-      esc(p.brand) + '" data-model="' + esc(gr.gr) + '" data-rank="' + rank + '">Add all 4 at Lowe’s ↗</a>' : '';
+      esc(p.brand) + '" data-model="' + esc(gr.gr) + '" data-rank="' + rank + '">Add all 4 at Lowe’s</a>' : '';
+    var verdict = custom ? 'Your version of our pick' : (rank <= 3 ? ORD[rank - 1] + ' score in your budget' : 'Ranked ' + rank + ' of ' + state.res.packages.length + ' in your budget');
     return '<article class="pkg" data-rank="' + rank + '">' +
-      '<div class="pkg-head"><div class="rank">' + rank + '</div>' +
-        '<div class="pkg-brand"><h3>' + esc(p.brand) + (custom ? '<span class="custom-tag">CUSTOM</span>' : '') + '</h3><span class="finish"><span class="sw" style="background:' + (SWATCH[p.finish] || 'var(--sunken)') + '"></span>' + esc(cap1(p.finish)) + '</span></div>' +
-        '<div class="kpi"><b>' + d.score.toFixed(1) + '</b><small>package score' + (orig ? ' (' + signed(d.score - orig.score, 1) + ')' : '') + '</small></div>' +
-        '<div class="kpi"><b>' + money(d.total) + '</b><small>' + (saleSave > 0 || d.bundleOff ? 'was ' + money(d.was) : 'four appliances') + '</small>' +
-          (saleSave > 0 || d.bundleOff ? '<span class="sv">You save ' + money(saleSave + d.bundleOff) + (d.bundleOff ? ' (' + money(d.bundleOff) + ' bundle)' : '') + '</span>' : '') + '</div>' +
+      '<div class="pkg-head">' +
+        '<div class="pkg-brand"><h3>' + esc(p.brand) + (custom ? '<span class="custom-tag">Customized</span>' : '') + '</h3>' +
+          '<span class="finish"><span class="sw" style="background:' + (SWATCH[p.finish] || 'var(--active)') + '"></span>' + esc(cap1(p.finish)) + ' · ' + verdict + '</span></div>' +
+        '<div class="fig score"><b>' + d.score.toFixed(1) + '</b>' + meter(d.score) +
+          '<small>package score' + (orig ? ' (' + signed(d.score - orig.score, 1) + ')' : '') + '</small></div>' +
+        '<div class="fig total"><b>' + money(d.total) + '</b>' +
+          (saleSave > 0 || d.bundleOff ? '<small>was ' + money(d.was) + '</small><span class="sv">You save ' + money(saleSave + d.bundleOff) +
+            (d.bundleOff ? ', ' + money(d.bundleOff) + ' of it bundle' : '') + '</span>' : '<small>four appliances</small>') + '</div>' +
       '</div>' +
+      trackHTML(d.total) +
       (perks.length ? '<div class="pkg-perks">' + perks.join('') + '</div>' : '') + all4 +
       '<div class="slots">' + items.map(function (it) { return slotHTML(it, p.brand, p.finish); }).join('') + '</div>' +
     '</article>';
@@ -839,9 +930,24 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
     document.querySelectorAll('#presets button').forEach(function (b) { b.setAttribute('aria-pressed', Number(b.dataset.cap) === cap ? 'true' : 'false'); });
 
     var pk = r.packages;
+    // The finding: the top pick against the runner-up, from the figures as shown.
+    var finding = '';
+    if (pk.length > 1) {
+      var a = pk[0], b = pk[1], gap = Number(a.score.toFixed(1)) - Number(b.score.toFixed(1)), dm = Math.round(a.total) - Math.round(b.total);
+      finding = esc(a.brand) + ' scores highest at ' + money(a.total) + ', ' + gap.toFixed(1) + ' points ahead of ' + esc(b.brand) +
+        (dm > 0 ? ' for ' + money(dm) + ' more.' : dm < 0 ? ' and ' + money(-dm) + ' less.' : ' at the same price.');
+    } else if (pk.length === 1) {
+      finding = 'Only ' + esc(pk[0].brand) + ' builds a matching package in this range.';
+    }
     out += '<div class="rhead"><h2>' + (pk.length ? 'Top picks for ' + money(cap) : 'No package fits yet') + '</h2>' +
-      '<span class="note">' + pk.length + ' brand' + (pk.length === 1 ? '' : 's') + ' can build a package · ' + r.evaluated.toLocaleString('en-US') + ' combinations checked</span></div>';
-    if (r.fridgeRule) out += '<div class="rule-note">In the under-$3,500 range we show side-by-side and French door fridges. Pick a fridge style to change this.</div>';
+      (finding ? '<p class="finding">' + finding + '</p>' : '') +
+      '<span class="note">' + pk.length + ' brand' + (pk.length === 1 ? '' : 's') + ' fit · ' + r.evaluated.toLocaleString('en-US') + ' combinations checked</span></div>';
+    if (pk.length) {
+      var lo = Math.min.apply(null, pk.map(function (p) { return p.score; })), hiS = Math.max.apply(null, pk.map(function (p) { return p.score; }));
+      out += '<p class="key">Scores run 0 to 100, from owner reviews at several stores and repair technicians’ reliability ratings' +
+        (pk.length > 1 ? '; here they run ' + lo.toFixed(1) + ' to ' + hiS.toFixed(1) : '') + '. <a href="#how">How we score</a></p>';
+    }
+    if (r.fridgeRule) out += '<div class="rule-note">Under $3,500 we show side-by-side and French door fridges. Pick a fridge style to change this.</div>';
     if (!pk.length) {
       var loose = E.search(DATA, state.f, { cap: cap, bundles: state.bundles, floor: false });
       out += '<div class="empty"><h3>No package lands between ' + money(r.lo) + ' and ' + money(r.hi) + ' with these filters.</h3><p>' +
@@ -851,8 +957,9 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
     if (pk.length > 3) {
       out += '<section class="others"><h3>More brands in your budget</h3>' + pk.slice(3).map(function (p) {
         var items = state.swaps[p.brand] || p.items, d = E.describe(items, DATA, state.bundles);
-        return '<details class="orow" data-brand="' + esc(p.brand) + '"' + (state.openRows[p.brand] ? ' open' : '') + '><summary><span class="mono">' + p.rank + '</span><span><span class="b">' + esc(p.brand) + '</span><span class="f">' + esc(cap1(p.finish)) + '</span></span>' +
-          '<span class="s">' + d.score.toFixed(1) + '</span><span class="t">' + money(d.total) + '</span></summary>' + pkgHTML(p, p.rank) + '</details>';
+        return '<details class="orow" data-brand="' + esc(p.brand) + '"' + (state.openRows[p.brand] ? ' open' : '') + '><summary><span class="rank">' + p.rank + '</span><span><span class="b">' + esc(p.brand) + '</span><span class="f">' + esc(cap1(p.finish)) + '</span></span>' +
+          '<span class="s">' + d.score.toFixed(1) + '</span><span class="t">' + money(d.total) + '</span><span class="chev" aria-hidden="true">›</span></summary>' +
+          (state.openRows[p.brand] ? pkgHTML(p, p.rank) : '') + '</details>';
       }).join('') + '</section>';
     }
     $('#results').innerHTML = out;
@@ -882,7 +989,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
     var alts = E.alternatives(DATA, items, s.cat, state.f, { bundles: state.bundles }, s.scope);
     if (s.sort === 'price') alts.sort(function (a, b) { return a.item.price - b.item.price || b.item.score - a.item.score; });
     $('#swapTitle').textContent = 'Swap the ' + CAT[s.cat].toLowerCase();
-    $('#swapSub').textContent = s.brand + ' package · now ' + cur.model + ', score ' + cur.score.toFixed(1) + ', ' + money(cur.price) + '. Your filters still apply.';
+    $('#swapSub').textContent = s.brand + ' package · now the ' + cur.model + ', scoring ' + cur.score.toFixed(1) + ' at ' + money(cur.price) + '. Your filters still apply.';
     document.querySelectorAll('#scopeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.scope === s.scope ? 'true' : 'false'); });
     document.querySelectorAll('#sortSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.sort === s.sort ? 'true' : 'false'); });
     $('#mixNote').hidden = s.scope === 'finish';
@@ -893,7 +1000,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
       return '<li class="' + (a.current ? 'cur' : '') + '">' +
         '<div class="alt-main"><div class="model">' + esc(it.model) + tag + '</div><div class="name">' + esc(it.name) + '</div>' +
           '<div class="specs">' + specBits(it).slice(0, 4).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div></div>' +
-        '<div class="alt-num"><b>' + it.score.toFixed(1) + '</b><small class="' + (dItem > 0.05 ? 'up' : dItem < -0.05 ? 'down' : '') + '">' + (a.current ? 'current' : signed(dItem, 1) + ' pts') + '</small></div>' +
+        '<div class="alt-num score"><b>' + it.score.toFixed(1) + '</b><small class="' + (dItem > 0.05 ? 'up' : dItem < -0.05 ? 'down' : '') + '">' + (a.current ? 'current' : signed(dItem, 1) + ' pts') + '</small></div>' +
         '<div class="alt-num"><b>' + money(it.price) + '</b><small>' + (a.current ? 'package ' + money(a.total) : 'package ' + signedMoney(a.dTotal)) + '</small>' +
           (a.total > hi ? '<span class="over">' + money(a.total - hi) + ' over budget</span>' : '') + '</div>' +
         '<button class="btn' + (a.current ? '' : ' solid') + '" type="button" data-pick="' + i + '"' + (a.current ? ' disabled' : '') + '>' + (a.current ? 'Current' : 'Use') + '</button>' +
@@ -935,6 +1042,7 @@ dialog::backdrop { background: rgba(8, 12, 16, 0.55); }
   $('#results').addEventListener('toggle', function (e) {
     var d = e.target; if (!d.classList || !d.classList.contains('orow')) return;
     state.openRows[d.dataset.brand] = d.open;
+    if (d.open && !d.querySelector('.pkg')) d.insertAdjacentHTML('beforeend', pkgHTML(pkgOf(d.dataset.brand), pkgOf(d.dataset.brand).rank));
   }, true);
 
   state.openRows = {};
