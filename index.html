@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitchen Package Builder</title>
+<meta name="description" content="The best one-brand range, refrigerator, dishwasher and microwave for your budget. Launching soon from Ben's Appliances.">
+<style>
+:root {
+  --bg: #F1F4F6; --surface: #FFFFFF; --ink: #111A22; --muted: #53616D; --line: #D3DBE2; --accent: #1C4ED6;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1217; --surface: #151C23; --ink: #E5EBF0; --muted: #96A3AF; --line: #28323C; --accent: #88A9FF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1217; --surface: #151C23; --ink: #E5EBF0; --muted: #96A3AF; --line: #28323C; --accent: #88A9FF;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+       background: var(--bg); color: var(--ink);
+       font: 16px/1.55 'Helvetica Neue', Arial, system-ui, sans-serif; }
+main { max-width: 34rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 32px 28px; }
+.by { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+h1 { font-size: clamp(28px, 6vw, 38px); line-height: 1.1; margin: 0 0 14px; }
+p { margin: 0 0 12px; color: var(--muted); }
+.soon { display: inline-block; margin-top: 8px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--accent);
+        color: var(--accent); font-size: 14px; }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <p class="by">Ben's Appliances</p>
+  <h1>Kitchen Package Builder</h1>
+  <p>Set a budget and see the best one-brand range, refrigerator, dishwasher and microwave you can buy for it, ranked by owner reviews and repair-technician reliability ratings.</p>
+  <p>We're putting the finishing touches on it.</p>
+  <span class="soon">Launching soon</span>
+  <p style="margin-top:20px">In the meantime, visit <a href="https://www.bens-appliances.com">bens-appliances.com</a>.</p>
+</main>
+</body>
+</html>
