@@ -500,6 +500,15 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 .fr-acts { display: grid; gap: 6px; grid-column: 3 / -1; grid-template-columns: auto 1fr auto; align-items: center; }
 .fr-acts .others { display: flex; flex-wrap: wrap; gap: 2px 12px; }
 .fr-acts .others a { font-size: 13px; font-weight: 700; white-space: nowrap; }
+/* Ben, 2026-11-18: the kitchen package builder gets a gold header button and a gold card in the hero. */
+.top nav a.pkg-nav { background: var(--gold); color: var(--navy); padding: 0 14px; border-radius: var(--radius-sm); font-weight: 800; }
+.top nav a.pkg-nav:hover { background: #fff; color: var(--navy); text-decoration: none; }
+.pkg-cta { display: flex; align-items: center; gap: 14px; align-self: flex-start; max-width: 100%; margin-top: 4px; padding: 12px 16px; background: var(--gold); color: var(--navy); border-radius: var(--radius-sm); text-decoration: none; box-shadow: 0 8px 20px rgba(6,20,46,.35); }
+.pkg-cta:hover { background: #fff; color: var(--navy); }
+.pkg-cta svg { flex: none; }
+.pkg-cta b { display: block; font-size: 22px; font-weight: 900; font-stretch: 75%; text-transform: uppercase; line-height: 1.05; }
+.pkg-cta small { display: block; font-size: 14px; font-weight: 700; margin-top: 2px; }
+.pkg-go { font-size: 26px; font-weight: 900; line-height: 1; margin-left: 6px; }
 /* Ben, 2026-11-18: Details is a button in its own colour, not a text link, and says what it opens. */
 .fr-acts .det-open { min-height: 44px; padding: 0 16px; border: 2px solid var(--blue); border-radius: var(--radius-sm); background: var(--blue-tint); color: var(--blue-hover); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .fr-acts .det-open:hover { background: var(--blue); color: #fff; }
@@ -525,6 +534,12 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   .hero.slim .in { grid-template-columns: minmax(0, 1fr); }
   .hero.slim .hero-art { display: none; }
   .hero.slim h1 { font-size: 40px; }
+  .top nav a.pkg-nav { display: none; } /* the hero card sits just below on phones */
+  .pkg-cta { align-self: stretch; gap: 10px; padding: 10px 12px; }
+  .pkg-cta svg { width: 70px; height: 20px; }
+  .pkg-cta b { font-size: 19px; }
+  .pkg-cta small { font-size: 13px; }
+  .pkg-go { margin-left: auto; }
   .fh { display: none; }
   .fr { grid-template-columns: 64px minmax(0, 1fr) auto; grid-template-areas: "ph main main" "ph score price" "acts acts acts"; gap: 8px 12px; padding: 14px; }
   .fr-rank { display: none; }
@@ -548,7 +563,9 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     <div class="mark"><b>Ben&#x27;s Appliances</b><i aria-hidden="true"></i><span>Appliance Rankings</span></div>
     <nav aria-label="Site">
       <a href="#how">How we score</a>
-      <a href="https://packages.bens-appliances.com/">Kitchen Packages</a>
+      <a class="pkg-nav" href="https://packages.bens-appliances.com/" data-xsite="header">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><rect x="2" y="2" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2 6.5 H16" stroke="currentColor" stroke-width="1.8"/><rect x="5" y="9" width="8" height="4.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        Kitchen Packages</a>
       <a href="https://www.youtube.com/@bensappliancesandjunk" target="_blank" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path d="M5 3.5 L14.5 9 L5 14.5 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         YouTube</a>
@@ -566,6 +583,17 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
       <h1>Appliance Rankings</h1>
       <p>Every model scored. Every store&#x27;s price.</p>
       <p class="disc">We earn a commission on purchases through our links. Scores are our own.</p>
+      <a class="pkg-cta" href="https://packages.bens-appliances.com/" data-xsite="hero">
+        <svg width="140" height="40" viewBox="0 0 140 40" aria-hidden="true" fill="#fff" stroke="#0E2A57" stroke-width="2" stroke-linejoin="round">
+          <rect x="2" y="2" width="26" height="36" rx="3"/><path d="M2 14 H28 M23 6 V10 M23 18 V25" fill="none"/>
+          <rect x="36" y="4" width="30" height="34" rx="3"/><path d="M36 12 H66" fill="none"/><rect x="41" y="17" width="20" height="14" rx="2"/>
+          <circle cx="43" cy="8" r="1.4" fill="#0E2A57" stroke="none"/><circle cx="49" cy="8" r="1.4" fill="#0E2A57" stroke="none"/><circle cx="55" cy="8" r="1.4" fill="#0E2A57" stroke="none"/><circle cx="61" cy="8" r="1.4" fill="#0E2A57" stroke="none"/>
+          <rect x="74" y="4" width="28" height="34" rx="3"/><path d="M74 11 H102 M82 16 H94" fill="none"/>
+          <rect x="108" y="12" width="30" height="20" rx="3"/><rect x="112" y="16" width="17" height="12" rx="1.5"/><path d="M133.5 16 V28" fill="none"/>
+        </svg>
+        <span><b>Kitchen Package Builder</b><small>One brand. Four appliances. Your budget.</small></span>
+        <span class="pkg-go" aria-hidden="true">→</span>
+      </a>
     </div>
   </div>
 </section>
@@ -983,6 +1011,11 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     var store = a.dataset.store;
     window.gtag('event', store + '_product_click', { site: 'finder', category: a.dataset.cat, model: a.dataset.model,
       rank: Number(a.dataset.rank) || null, store: store, affiliate: /shoplowes\.me|creatoriq\.cc|7tiv\.net|anrdoezrs\.net/.test(a.href) });
+  });
+  // GA4: clicks through to the kitchen package builder, and from where (header button or hero card).
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-xsite]');
+    if (a && typeof window.gtag === 'function') window.gtag('event', 'packages_click', { site: 'finder', from: a.dataset.xsite, category: state.cat });
   });
   if (window.matchMedia) {
     var narrow = window.matchMedia('(max-width: 1100px)');
