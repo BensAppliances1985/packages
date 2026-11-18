@@ -500,7 +500,20 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 .fr-acts { display: grid; gap: 6px; grid-column: 3 / -1; grid-template-columns: auto 1fr auto; align-items: center; }
 .fr-acts .others { display: flex; flex-wrap: wrap; gap: 2px 12px; }
 .fr-acts .others a { font-size: 13px; font-weight: 700; white-space: nowrap; }
-.fr-acts .lnk { min-height: 32px; flex: none; text-align: left; padding: 0; }
+/* Ben, 2026-11-18: Details is a button in its own colour, not a text link, and says what it opens. */
+.fr-acts .det-open { min-height: 44px; padding: 0 16px; border: 2px solid var(--blue); border-radius: var(--radius-sm); background: var(--blue-tint); color: var(--blue-hover); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.fr-acts .det-open:hover { background: var(--blue); color: #fff; }
+/* Details: how the score was built, under the owner stars. */
+.sc-parts { display: grid; gap: 10px; border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 12px 14px; }
+.sc-parts .det-h { margin: 0; }
+.sc-part { display: grid; gap: 4px; }
+.sc-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15px; font-weight: 700; }
+.sc-top b { font-size: 18px; font-weight: 900; color: var(--navy); font-variant-numeric: tabular-nums; }
+.sc-top b small { font-size: 13px; font-weight: 700; color: var(--muted); }
+.sc-w { font-size: 12px; font-weight: 800; color: var(--muted); background: var(--raised); border-radius: 5px; padding: 1px 6px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.sc-part .bar { height: 8px; }
+.sc-part > small, .sc-note { font-size: 13px; color: var(--muted); }
+.sc-note { margin: 0; font-size: 14px; font-weight: 700; }
 .more-row { display: flex; justify-content: center; padding: 18px; border-top: 1px solid var(--rule); }
 .more-row button { min-height: 48px; padding: 0 22px; border: 2px solid var(--blue); border-radius: var(--radius-sm); background: var(--surface); color: var(--blue); font-weight: 800; font-size: 16px; cursor: pointer; }
 .empty-f { padding: 28px; text-align: center; color: var(--muted); }
@@ -521,6 +534,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   .fr-price { grid-area: price; }
   .fr-price b { font-size: 22px; }
   .fr-acts { grid-area: acts; grid-column: auto; grid-template-columns: 1fr; }
+  .fr-acts .det-open { width: 100%; }
   .tools select { flex: 1 1 100%; }
   .tools .count { margin-left: 0; }
 }
@@ -623,7 +637,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   <div id="detBody"></div>
 </dialog>
 
-<script type="application/json" id="finder-index">{"built":"2026-11-18T16:59:38+00:00","rules":{"min_reviews":100,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":133,"brands":12,"photos":119,"stores":{"lowes":104,"bestbuy":119,"ajmadison":81}},{"cat":"dryer","label":"Dryers","count":167,"brands":15,"photos":162,"stores":{"lowes":132,"bestbuy":144,"ajmadison":132}},{"cat":"refrigerator","label":"Refrigerators","count":321,"brands":24,"photos":268,"stores":{"lowes":183,"bestbuy":224,"ajmadison":180}},{"cat":"range","label":"Ranges","count":357,"brands":31,"photos":298,"stores":{"lowes":276,"bestbuy":207,"ajmadison":219}},{"cat":"cooktop","label":"Cooktops","count":66,"brands":12,"photos":66,"stores":{"lowes":53,"bestbuy":64,"ajmadison":42}},{"cat":"wall_oven","label":"Wall Ovens","count":95,"brands":12,"photos":89,"stores":{"lowes":57,"bestbuy":93,"ajmadison":49}},{"cat":"dishwasher","label":"Dishwashers","count":120,"brands":18,"photos":115,"stores":{"lowes":109,"bestbuy":94,"ajmadison":95}},{"cat":"microwave","label":"Microwaves","count":141,"brands":29,"photos":128,"stores":{"lowes":107,"bestbuy":103,"ajmadison":102}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
+<script type="application/json" id="finder-index">{"built":"2026-11-18T18:19:48+00:00","rules":{"min_reviews":100,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":133,"brands":12,"photos":119,"stores":{"lowes":104,"bestbuy":119,"ajmadison":81}},{"cat":"dryer","label":"Dryers","count":167,"brands":15,"photos":162,"stores":{"lowes":132,"bestbuy":144,"ajmadison":132}},{"cat":"refrigerator","label":"Refrigerators","count":321,"brands":24,"photos":268,"stores":{"lowes":183,"bestbuy":224,"ajmadison":180}},{"cat":"range","label":"Ranges","count":357,"brands":31,"photos":298,"stores":{"lowes":276,"bestbuy":207,"ajmadison":219}},{"cat":"cooktop","label":"Cooktops","count":66,"brands":12,"photos":66,"stores":{"lowes":53,"bestbuy":64,"ajmadison":42}},{"cat":"wall_oven","label":"Wall Ovens","count":95,"brands":12,"photos":89,"stores":{"lowes":57,"bestbuy":93,"ajmadison":49}},{"cat":"dishwasher","label":"Dishwashers","count":120,"brands":18,"photos":115,"stores":{"lowes":109,"bestbuy":94,"ajmadison":95}},{"cat":"microwave","label":"Microwaves","count":141,"brands":29,"photos":128,"stores":{"lowes":107,"bestbuy":103,"ajmadison":102}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
 <script>
 (function () {
   'use strict';
@@ -780,7 +794,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         (o.rebate ? '<span class="rebate-tag" title="' + esc(o.rebate_label || 'Mail-in rebate') + '">Mail-in rebate ' + money(o.rebate) + '</span>' : '') + '</div>' +
       '<div class="fr-acts">' + buy(it, o, 'buy', 'View at ' + esc(sname(o.s))) +
         '<div class="others">' + offers.slice(1).map(function (x) { return buy(it, x, '', esc(sname(x.s)) + ' ' + money(x.price)); }).join('') + '</div>' +
-        '<button class="lnk" type="button" data-detail="' + esc(it.id) + '">Details</button></div>' +
+        '<button class="det-open" type="button" data-detail="' + esc(it.id) + '" aria-label="Details and store prices: ' + esc(it.brand + ' ' + it.model) + '">Details &amp; Store Prices</button></div>' +
     '</article>';
   }
 
@@ -877,6 +891,21 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     if (!it.det) return renderDetail(it, {});
     fetch('/d/' + key + '.json').then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(show).catch(function () { renderDetail(it, {}); });
   }
+  // How the score was built (export_finder_data.score_parts): owner reviews and the repair-tech score, each
+  // 0-100 with its weight; the rest of the weight is research we don't name or show.
+  var BASIS = { type: 'Rated by brand and appliance type', series: 'Rated by model series', brand: 'Rated by brand', est: 'Estimated from similar models' };
+  function partsHTML(it) {
+    var p = it.parts; if (!p || p.owner == null) return '';
+    var part = function (label, v, w, note) {
+      return '<div class="sc-part"><div class="sc-top"><span>' + label + '<span class="sc-w">' + w + '% of score</span></span><b>' + Math.round(v) + '<small>/100</small></b></div>' +
+        '<span class="bar" aria-hidden="true"><i style="width:' + clamp(v) + '%"></i></span>' + (note ? '<small>' + esc(note) + '</small>' : '') + '</div>';
+    };
+    return '<div class="sc-parts"><h4 class="det-h">How it’s scored</h4>' +
+      part('Owner reviews', p.owner, p.owner_w) +
+      (p.tech != null ? part('Repair technicians', p.tech, p.tech_w, BASIS[p.tech_basis])
+        : '<p class="sc-note">No repair-tech rating for ' + esc(state.data.label.toLowerCase()) + '</p>') +
+      (p.other_w > 0 ? '<p class="sc-note">Other research we track<span class="sc-w">' + p.other_w + '% of score</span></p>' : '') + '</div>';
+  }
   function renderDetail(it, d) {
     var imgs = (d.img || []).length ? d.img : (it.image ? [it.image] : []);
     // Every store and finish, grouped by finish (the row's finish first).
@@ -888,7 +917,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         }).join('') + '</div>' : '') : '') + '</div>' +
       '<div class="det-sum">' + (d.desc ? '<p class="desc">' + esc(d.desc) + '</p>' : '') +
         '<div class="det-fig"><div class="scorefig"><div><b>' + it.score.toFixed(1) + '</b><span>/100</span></div><small>Score · #' + it.rank + ' of ' + state.data.items.length + '</small></div></div>' +
-        owner(it) +
+        owner(it) + partsHTML(it) +
         '<div class="det-offers">' + offers.map(function (o) {
           return '<div class="o"><span>' + esc(sname(o.s)) + ' · ' + esc(cap1(o.finish)) + ' · ' + esc(o.model) + (o.was && o.was > o.price ? ' <s>' + money(o.was) + '</s>' : '') + '<br><b>' + money(o.price) + '</b>' +
             (o.soon ? ' <span class="soon-tag">More on the way</span>' : '') +
