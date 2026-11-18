@@ -495,6 +495,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 .fr-price b { font-size: 26px; font-weight: 900; font-stretch: 80%; line-height: 1.1; }
 .fr-price s { font-size: 14px; color: var(--muted); }
 .fr-price .at { font-size: 13px; color: var(--muted); }
+.soon-tag { font-size: 12px; font-weight: 800; background: var(--red-tint); color: var(--ink); border-radius: 5px; padding: 1px 7px; white-space: nowrap; }
 .fr-price .rebate-tag { font-size: 12px; font-weight: 800; background: var(--blue-tint); color: var(--blue-hover); border-radius: 5px; padding: 1px 7px; }
 .fr-acts { display: grid; gap: 6px; grid-column: 3 / -1; grid-template-columns: auto 1fr auto; align-items: center; }
 .fr-acts .others { display: flex; flex-wrap: wrap; gap: 2px 12px; }
@@ -596,7 +597,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
       <h3>How we score</h3>
       <ul>
         <li>One score per model, 0 to 100: owner ratings pooled across major retailers, repair-tech reliability rankings and other research we track.</li>
-        <li>Every model: 250+ owner reviews. One row per model and finish.</li>
+        <li>Every model: 100+ owner reviews. One row per model.</li>
         <li>Ranked by score, then lowest price.</li>
         <li>Prices from Lowe’s, Best Buy and AJ Madison. Instant savings included. Mail-in rebates shown, not included.</li>
       </ul>
@@ -622,7 +623,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   <div id="detBody"></div>
 </dialog>
 
-<script type="application/json" id="finder-index">{"built":"2026-11-18T02:05:41+00:00","rules":{"min_reviews":250,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":116,"brands":11,"photos":103,"stores":{"lowes":95,"bestbuy":106,"ajmadison":69}},{"cat":"dryer","label":"Dryers","count":142,"brands":10,"photos":129,"stores":{"lowes":120,"bestbuy":128,"ajmadison":113}},{"cat":"refrigerator","label":"Refrigerators","count":246,"brands":21,"photos":199,"stores":{"lowes":164,"bestbuy":191,"ajmadison":135}},{"cat":"range","label":"Ranges","count":257,"brands":24,"photos":199,"stores":{"lowes":215,"bestbuy":166,"ajmadison":167}},{"cat":"cooktop","label":"Cooktops","count":46,"brands":11,"photos":39,"stores":{"lowes":42,"bestbuy":46,"ajmadison":30}},{"cat":"wall_oven","label":"Wall Ovens","count":62,"brands":10,"photos":56,"stores":{"lowes":45,"bestbuy":62,"ajmadison":36}},{"cat":"dishwasher","label":"Dishwashers","count":103,"brands":17,"photos":92,"stores":{"lowes":95,"bestbuy":86,"ajmadison":82}},{"cat":"microwave","label":"Microwaves","count":100,"brands":21,"photos":86,"stores":{"lowes":80,"bestbuy":82,"ajmadison":77}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
+<script type="application/json" id="finder-index">{"built":"2026-11-18T16:19:24+00:00","rules":{"min_reviews":100,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":133,"brands":12,"photos":103,"stores":{"lowes":104,"bestbuy":119,"ajmadison":81}},{"cat":"dryer","label":"Dryers","count":167,"brands":15,"photos":129,"stores":{"lowes":132,"bestbuy":144,"ajmadison":132}},{"cat":"refrigerator","label":"Refrigerators","count":321,"brands":24,"photos":200,"stores":{"lowes":183,"bestbuy":224,"ajmadison":180}},{"cat":"range","label":"Ranges","count":357,"brands":31,"photos":199,"stores":{"lowes":276,"bestbuy":207,"ajmadison":219}},{"cat":"cooktop","label":"Cooktops","count":66,"brands":12,"photos":39,"stores":{"lowes":53,"bestbuy":64,"ajmadison":42}},{"cat":"wall_oven","label":"Wall Ovens","count":95,"brands":12,"photos":56,"stores":{"lowes":57,"bestbuy":93,"ajmadison":49}},{"cat":"dishwasher","label":"Dishwashers","count":120,"brands":18,"photos":92,"stores":{"lowes":109,"bestbuy":94,"ajmadison":95}},{"cat":"microwave","label":"Microwaves","count":141,"brands":29,"photos":86,"stores":{"lowes":107,"bestbuy":103,"ajmadison":102}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
 <script>
 (function () {
   'use strict';
@@ -775,6 +776,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
       '<div class="fr-score"><span class="lbl">Score</span><div class="sbar"><span class="schip">' + it.score.toFixed(1) + '</span><span class="bar" aria-hidden="true"><i style="width:' + clamp(it.score) + '%"></i></span></div></div>' +
       '<div class="fr-owner">' + owner(it) + '</div>' +
       '<div class="fr-price"><b>' + money(o.price) + '</b>' + (sale ? '<s>' + money(o.was) + '</s>' : '') + '<span class="at">at ' + esc(sname(o.s)) + '</span>' +
+        (o.soon ? '<span class="soon-tag">More on the way</span>' : '') +
         (o.rebate ? '<span class="rebate-tag" title="' + esc(o.rebate_label || 'Mail-in rebate') + '">Mail-in rebate ' + money(o.rebate) + '</span>' : '') + '</div>' +
       '<div class="fr-acts">' + buy(it, o, 'buy', 'View at ' + esc(sname(o.s))) +
         '<div class="others">' + offers.slice(1).map(function (x) { return buy(it, x, '', esc(sname(x.s)) + ' ' + money(x.price)); }).join('') + '</div>' +
@@ -822,14 +824,18 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     var m = state.data.stores || {};
     $('#stamp').innerHTML = esc(state.data.label) + ': ' + Object.keys(m).filter(function (s) { return m[s].prices_fetched; }).map(function (s) {
       return esc(m[s].name) + ' prices <b>' + esc(day(m[s].prices_fetched)) + '</b>'; }).join(' · ');
-    var notes = [], oos = 0;
-    state.data.items.forEach(function (it) { it.offers.forEach(function (o) { if (o.oos) oos++; }); });
+    var notes = [], oos = 0, soon = 0;
+    state.data.items.forEach(function (it) {
+      it.offers.forEach(function (o) { if (o.oos) oos++; });
+      if (it.offers.every(function (o) { return o.soon; })) soon++;
+    });
     Object.keys(m).forEach(function (s) {
       var S = m[s], f = S.prices_fetched ? day(S.prices_fetched) + ', ' + String(S.prices_fetched).slice(0, 4) : 'n/a';
       notes.push(S.store && S.zip ? S.name + ' store ' + S.store + ', ZIP ' + S.zip + ', as of ' + f + '. Your store may differ.' : S.name + ' online prices, as of ' + f + '.');
       if (s === 'lowes' && oos) notes.push(oos + ' Lowe’s models out of stock at ZIP ' + S.zip + ' are shown at their listed price.');
       if (S.note) notes.push(S.note);
     });
+    if (soon) notes.push('More on the way: ' + soon + (soon === 1 ? ' model is' : ' models are') + ' out of stock at every store we track, shown at the listed price.');
     notes.push(andJoin(Object.keys(m).map(function (s) { return m[s].name; })) + ' pay us a commission on purchases through our links. Your price is the same. Retailers have no say in scores or rankings.');
     $('#notes').innerHTML = notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
   }
@@ -885,6 +891,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         owner(it) +
         '<div class="det-offers">' + offers.map(function (o) {
           return '<div class="o"><span>' + esc(sname(o.s)) + ' · ' + esc(cap1(o.finish)) + ' · ' + esc(o.model) + (o.was && o.was > o.price ? ' <s>' + money(o.was) + '</s>' : '') + '<br><b>' + money(o.price) + '</b>' +
+            (o.soon ? ' <span class="soon-tag">More on the way</span>' : '') +
             (o.rebate ? '<br><small>Mail-in rebate ' + money(o.rebate) + '</small>' : '') + '</span>' + buy(it, o, 'buy', 'View at ' + esc(sname(o.s))) + '</div>';
         }).join('') + '</div>' +
         ((d.size || []).length ? '<div><h4 class="det-h">Size</h4><div class="det-size">' + d.size.map(function (x) { return '<div><small>' + esc(x[0]) + '</small><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div></div>' : '') +
