@@ -809,7 +809,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   function rowHTML(it) {
     var offers = offersFor(it), o = offers[0], sale = o.was && o.was > o.price;
     return '<article class="fr" id="row-' + esc(it.id) + '">' +
-      '<div class="fr-rank">#' + it.rank + '</div>' + photo(it, o.model) +
+      '<div class="fr-rank">#' + rankOf(it) + '</div>' + photo(it, o.model) +
       '<div class="fr-main"><div class="ttl"><b>' + esc(it.brand) + '</b> ' + esc(it.name) + '</div>' +
         '<div class="mdl">Model # ' + esc(o.model) + ' · ' + esc(cap1(o.finish)) +
           (it.finishes.length > 1 ? ' · ' + it.finishes.length + ' finishes' : '') + '</div>' +
@@ -826,8 +826,21 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     '</article>';
   }
 
+  // Ben, 2026-11-18: with a filter or search on, # is the model's place among the models shown (by score,
+  // then price), so top-loads read #1, #2, #3 instead of their places among all washers (#1, #3, #4, #9).
+  // Details adds the overall rank; GA keeps the overall rank (data-rank) so reports stay comparable.
+  function rankShown(items) {
+    var best = function (it) { return offersFor(it)[0].price; };
+    state.rk = {}; state.nShown = items.length;
+    items.slice().sort(function (a, b) { return b.score - a.score || best(a) - best(b); })
+      .forEach(function (it, i) { state.rk[it.id] = i + 1; });
+  }
+  function rankOf(it) { return (state.nShown < state.data.items.length && state.rk[it.id]) || it.rank; }
+
   function render() {
-    var d = state.data, items = sorted(d.items.filter(passes));
+    var d = state.data, filtered = d.items.filter(passes);
+    rankShown(filtered);
+    var items = sorted(filtered);
     $('#count').textContent = items.length + ' of ' + d.items.length + ' ' + d.label.toLowerCase();
     document.querySelectorAll('#fh [data-sort]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.sort === state.sort ? 'true' : 'false'); });
     $('#sort').value = state.sort;
@@ -944,7 +957,9 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
           return '<button type="button" data-img="' + esc(u) + '" aria-pressed="' + (i === 0) + '" aria-label="Photo ' + (i + 1) + '"><img src="' + esc(u) + '" alt="" loading="lazy"></button>';
         }).join('') + '</div>' : '') : '') + '</div>' +
       '<div class="det-sum">' + (d.desc ? '<p class="desc">' + esc(d.desc) + '</p>' : '') +
-        '<div class="det-fig"><div class="scorefig"><div><b>' + it.score.toFixed(1) + '</b><span>/100</span></div><small>Score · #' + it.rank + ' of ' + state.data.items.length + '</small></div></div>' +
+        '<div class="det-fig"><div class="scorefig"><div><b>' + it.score.toFixed(1) + '</b><span>/100</span></div><small>Score · ' + (state.rk && state.rk[it.id] && state.nShown < state.data.items.length
+          ? '#' + state.rk[it.id] + ' of ' + state.nShown + ' shown · #' + it.rank + ' of ' + state.data.items.length + ' overall'
+          : '#' + it.rank + ' of ' + state.data.items.length) + '</small></div></div>' +
         owner(it) + partsHTML(it) +
         '<div class="det-offers">' + offers.map(function (o) {
           return '<div class="o"><span>' + esc(sname(o.s)) + ' · ' + esc(cap1(o.finish)) + ' · ' + esc(o.model) + (o.was && o.was > o.price ? ' <s>' + money(o.was) + '</s>' : '') + '<br><b>' + money(o.price) + '</b>' +
