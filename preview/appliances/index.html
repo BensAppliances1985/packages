@@ -624,7 +624,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
           <span>#</span><span></span><span>Model</span>
           <button type="button" data-sort="score">Score</button>
           <button type="button" class="c-owner" data-sort="rating">Owner rating</button>
-          <button type="button" data-sort="price">Best price</button>
+          <button type="button" data-sort="price">Price</button>
           <span class="c-acts">Where to buy</span>
         </div>
         <div class="list" id="list"></div>
@@ -741,15 +741,37 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     return b;
   }
 
+  // Ben, 2026-11-24: which store comes first (the green button) and the order of the rest. Lowe's, then
+  // Best Buy, then AJ Madison; Samsung puts Best Buy first (its buy-more-save-more pairs appliances with other
+  // Best Buy products). A later store goes first only when it is at least SWITCH_PCT and SWITCH_MIN below the
+  // first store, or when the first store is over the shopper's price filter and it isn't. An offer without an
+  // affiliate link sorts after the linked ones.
+  var STORE_ORDER = ['lowes', 'bestbuy', 'ajmadison'], SAMSUNG_ORDER = ['bestbuy', 'lowes', 'ajmadison'];
+  var SWITCH_PCT = 0.10, SWITCH_MIN = 50;
+  function orderOffers(it, list, cap) {
+    if (!list.length) return [];
+    var order = /samsung/i.test(it.brand) ? SAMSUNG_ORDER : STORE_ORDER;
+    var pos = function (o) { var i = order.indexOf(o.s); return (i < 0 ? order.length : i) + (o.aff && o.aff !== o.url ? 0 : 10); };
+    var byPref = list.slice().sort(function (a, b) { return pos(a) - pos(b) || a.price - b.price; });
+    // First in store order that the cheapest offer doesn't beat by the gap; with a price filter, only offers
+    // under it count when there are any. (Best Buy $4,679.99 vs AJ Madison $4,679 goes to Best Buy even when
+    // Lowe's at $5,199 is passed over.)
+    var under = cap ? byPref.filter(function (o) { return o.price <= cap; }) : [];
+    var pool = under.length ? under : byPref, low = lowest(pool);
+    var lead = pool.filter(function (o) { return o.price - low < Math.max(SWITCH_MIN, SWITCH_PCT * o.price); })[0];
+    return [lead].concat(byPref.filter(function (o) { return o !== lead; }));
+  }
+  var lowest = function (offers) { return Math.min.apply(null, offers.map(function (o) { return o.price; })); };
+
   // A row is one model family; offers are per store and finish. Shown: each allowed store's lowest
-  // price in the finishes the shopper allows, cheapest store first.
+  // price in the finishes the shopper allows, in orderOffers' order.
   function offersFor(it) {
     var f = state.f, best = {};
     it.offers.forEach(function (o) {
       if (f.noStores.has(o.s) || (f.finishes.size && !f.finishes.has(o.finish))) return;
       if (!best[o.s] || o.price < best[o.s].price) best[o.s] = o;
     });
-    return Object.keys(best).map(function (s) { return best[s]; }).sort(function (a, b) { return a.price - b.price; });
+    return orderOffers(it, Object.keys(best).map(function (s) { return best[s]; }), f.maxPrice);
   }
 
   function passes(it) {
@@ -780,9 +802,10 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 
   function sorted(items) {
     var key = state.sort, out = items.slice();
-    var best = function (it) { return offersFor(it)[0].price; };
+    // Price sort follows the price shown (the first store's); score ties break on the lowest price, as the export ranks.
+    var shown = function (it) { return offersFor(it)[0].price; }, best = function (it) { return lowest(offersFor(it)); };
     out.sort(function (a, b) {
-      if (key === 'price') return best(a) - best(b) || b.score - a.score;
+      if (key === 'price') return shown(a) - shown(b) || b.score - a.score;
       if (key === 'rating') return (b.rating || 0) - (a.rating || 0) || b.score - a.score;
       if (key === 'reviews') return (b.reviews || 0) - (a.reviews || 0) || b.score - a.score;
       return b.score - a.score || best(a) - best(b);
@@ -830,7 +853,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   // then price), so top-loads read #1, #2, #3 instead of their places among all washers (#1, #3, #4, #9).
   // Details adds the overall rank; GA keeps the overall rank (data-rank) so reports stay comparable.
   function rankShown(items) {
-    var best = function (it) { return offersFor(it)[0].price; };
+    var best = function (it) { return lowest(offersFor(it)); };
     state.rk = {}; state.nShown = items.length;
     items.slice().sort(function (a, b) { return b.score - a.score || best(a) - best(b); })
       .forEach(function (it, i) { state.rk[it.id] = i + 1; });
@@ -890,6 +913,8 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
       if (s === 'lowes' && oos) notes.push(oos + ' Lowe’s models out of stock at ZIP ' + S.zip + ' are shown at their listed price.');
       if (S.note) notes.push(S.note);
     });
+    notes.push('Store shown first: Lowe’s, then Best Buy, then AJ Madison (Samsung: Best Buy first), unless another store is at least ' +
+      Math.round(SWITCH_PCT * 100) + '% and $' + SWITCH_MIN + ' lower.');
     if (soon) notes.push('More on the way: ' + soon + (soon === 1 ? ' model is' : ' models are') + ' out of stock at every store we track, shown at the listed price.');
     notes.push(andJoin(Object.keys(m).map(function (s) { return m[s].name; })) + ' pay us a commission on purchases through our links. Your price is the same. Retailers have no say in scores or rankings.');
     $('#notes').innerHTML = notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
@@ -949,8 +974,9 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   }
   function renderDetail(it, d) {
     var imgs = (d.img || []).length ? d.img : (it.image ? [it.image] : []);
-    // Every store and finish, grouped by finish (the row's finish first).
-    var offers = it.offers.slice().sort(function (a, b) { return (it.finishes.indexOf(a.finish) - it.finishes.indexOf(b.finish)) || a.price - b.price; });
+    // Every store and finish, grouped by finish (the row's finish first), stores in orderOffers' order.
+    var offers = [];
+    it.finishes.forEach(function (fin) { offers = offers.concat(orderOffers(it, it.offers.filter(function (o) { return o.finish === fin; }), 0)); });
     var h = '<div class="det-body">' +
       '<div class="det-gal">' + (imgs.length ? '<div class="main"><img id="detMain" src="' + esc(imgs[0]) + '" alt="' + esc(it.brand + ' ' + it.model) + '"></div>' +
         (imgs.length > 1 ? '<div class="thumbs">' + imgs.map(function (u, i) {
