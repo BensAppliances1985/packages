@@ -681,12 +681,15 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 
   // One model at one store: the exact model number, as every store prints it.
   function mk(m) { return String(m || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  // Samsung's US region code: Best Buy prints some models as "NSI6DG9100SRAA" (no slash), the other
+  // stores as "NSI6DG9100SR".
+  function okey(it) { var k = mk(it.model); return /samsung/i.test(it.brand || '') && k.length > 10 && /AA$/.test(k) ? k.slice(0, -2) : k; }
   var offerIx = typeof WeakMap === 'function' ? new WeakMap() : null;
   function offers(data) {
     var ix = offerIx && offerIx.get(data);
     if (ix) return ix;
     ix = {};
-    data.items.forEach(function (it) { var k = (it.store || '') + '|' + mk(it.model); if (!ix[k]) ix[k] = it; });
+    data.items.forEach(function (it) { var k = (it.store || '') + '|' + okey(it); if (!ix[k]) ix[k] = it; });
     if (offerIx) offerIx.set(data, ix);
     return ix;
   }
@@ -694,7 +697,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   function sameAt(data, items, store) {
     var ix = offers(data), out = [];
     for (var i = 0; i < items.length; i++) {
-      var o = ix[store + '|' + mk(items[i].model)];
+      var o = ix[store + '|' + okey(items[i])];
       if (!o) return null;
       out.push(o);
     }
@@ -703,7 +706,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   /* Every store's listing of one model (keyed by store). */
   function storesFor(data, it, stores) {
     var ix = offers(data), out = {};
-    stores.forEach(function (s) { var o = ix[s + '|' + mk(it.model)]; if (o) out[s] = o; });
+    stores.forEach(function (s) { var o = ix[s + '|' + okey(it)]; if (o) out[s] = o; });
     return out;
   }
 
@@ -818,6 +821,24 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
              total: reb ? r2(gross - b.off - reb) : r2(gross - b.off), score: r2(score / items.length) };
   }
 
+  /* Which store a package is shown at (Ben, 2026-11-24): Lowe's, then Best Buy, then AJ Madison;
+   * Samsung Best Buy first (its buy-more-save-more with non-appliance products). A store is
+   * passed over only when another prices the package at least SWITCH_PCT and SWITCH_MIN lower,
+   * and a package with any model lacking an affiliate link goes last. Scores and ranks don't
+   * change: only stores tied on a brand's top score compete. Same rule as the finder. */
+  var STORE_ORDER = ['lowes', 'bestbuy', 'ajmadison'], SAMSUNG_ORDER = ['bestbuy', 'lowes', 'ajmadison'];
+  var SWITCH_PCT = 0.10, SWITCH_MIN = 50;
+  function storeOrder(brand) { return /samsung/i.test(brand || '') ? SAMSUNG_ORDER : STORE_ORDER; }
+  var linked = function (it) { return !!it.affiliate_url && it.affiliate_url !== it.url; };
+  /* cands: [{store, total, items, ...}] for one brand; returns the one to show. */
+  function shownAt(brand, cands) {
+    var order = storeOrder(brand);
+    var pos = function (c) { var i = order.indexOf(c.store); return (i < 0 ? order.length : i) + (c.items.every(linked) ? 0 : 10); };
+    var byPref = cands.slice().sort(function (a, b) { return pos(a) - pos(b) || a.total - b.total; });
+    var low = Math.min.apply(null, cands.map(function (c) { return c.total; }));
+    return byPref.filter(function (c) { return c.total - low < Math.max(SWITCH_MIN, SWITCH_PCT * c.total); })[0];
+  }
+
   /* Best package per brand inside the bracket, best first. */
   function search(data, f, opt) {
     var cap = opt.cap, br = bracket(cap, opt), lo = br.lo, hi = br.hi;
@@ -876,13 +897,30 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         }
       }
     });
-    // Each brand's best package at any store (first found wins an exact tie); its best at
-    // every store rides along as atStores so the page can show each store's pick.
-    var top = {}, at = {};
+    // Each brand's best package at any store; its best at every store rides along as atStores so
+    // the page can show each store's pick. When several stores tie on the top score (usually the
+    // same four models), the brand's store order picks the one shown (shownAt).
+    var top = {}, at = {}, ties = {};
     Object.keys(best).forEach(function (k) {
       var p = best[k], cur = top[p.brand];
       if (!cur || p.score > cur.score || (p.score === cur.score && p.total < cur.total)) top[p.brand] = p;
       if (p.store) (at[p.brand] = at[p.brand] || {})[p.store] = { score: p.score, total: p.total, finish: p.finish, items: p.items };
+      (ties[p.brand] = ties[p.brand] || []).push(p);
+    });
+    // Candidates: each store's own pick on the top score, and the same four models at the other
+    // stores inside the bracket (a store can file one of them under another finish name).
+    Object.keys(top).forEach(function (b) {
+      var p = top[b];
+      if (!p.store) return;
+      var cands = ties[b].filter(function (q) { return q.score === p.score; });
+      Object.keys(data.stores || {}).forEach(function (s) {
+        if (s === p.store) return;
+        var same = sameAt(data, p.items, s);
+        if (!same || !same.every(function (it) { return passes(it, f, { finish: true }); })) return;
+        var t = describe(same, data, !!bundles, rb).total;
+        if (t >= lo && t <= hi) cands.push({ brand: b, finish: p.finish, store: s, score: p.score, total: t, items: same });
+      });
+      if (cands.length > 1) top[b] = shownAt(b, cands);
     });
     var ranked = Object.keys(top).map(function (k) { return top[k]; })
       .sort(function (x, y) { return y.score - x.score || x.total - y.total; })
@@ -921,7 +959,8 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
               bracket: bracket, describe: describe, search: search, alternatives: alternatives,
               counterDepth: counterDepth, tierFridgeRule: tierFridgeRule,
               endsAt: endsAt, effective: effective, limitedReviews: limitedReviews,
-              sameAt: sameAt, storesFor: storesFor, rebateSum: rebateSum };
+              sameAt: sameAt, storesFor: storesFor, rebateSum: rebateSum,
+              storeOrder: storeOrder, shownAt: shownAt, SWITCH_PCT: SWITCH_PCT, SWITCH_MIN: SWITCH_MIN, modelKey: okey };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PkgEngine = api;
 })(typeof window !== 'undefined' ? window : this);
@@ -1151,6 +1190,13 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         ((S.bundle_source.partial_for || []).length ? ' Some listings couldn’t be read, so a few bundle savings may show low.' : ''));
     });
     notes.push(andJoin(SKEYS.map(sname)) + (MULTI ? ' pay' : ' pays') + ' us a commission on purchases through our links. Your price is the same. Retailers have no say in scores or rankings.');
+    if (MULTI) {
+      var inData = function (order) { return order.filter(function (s) { return STORES[s]; }); };
+      var ord = inData(E.storeOrder('')), sam = inData(E.storeOrder('Samsung'));
+      notes.push('Store shown first: ' + ord.map(sname).join(', then ') +
+        (sam[0] !== ord[0] && BRANDS.indexOf('Samsung') >= 0 ? ' (Samsung: ' + sname(sam[0]) + ' first)' : '') +
+        ', unless another store is at least ' + Math.round(E.SWITCH_PCT * 100) + '% and $' + E.SWITCH_MIN + ' lower.');
+    }
     notes.push(andJoin(SKEYS.map(function (s) { return DATA.items.filter(function (it) { return it.store === s; }).length + ' ' + sname(s); })) +
       ' models, ' + BRANDS.length + ' brands this week.');
     $('#protoNotes').innerHTML = notes.filter(Boolean).map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('');
@@ -1190,7 +1236,12 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   function viewOf(p) { var v = state.view[p.brand]; return v && p.atStores && p.atStores[v] ? v : null; }
   function baseItems(p) { var v = viewOf(p); return v ? p.atStores[v].items : p.items; }
   function pkgItems(p) { return state.swaps[p.brand] || baseItems(p); }
-  var sameModels = function (a, b) { return a.every(function (it, i) { return it.model === b[i].model; }); };
+  var sameModels = function (a, b) { return a.every(function (it, i) { return E.modelKey(it) === E.modelKey(b[i]); }); };
+  // The other stores in this brand's store order (engine storeOrder: Lowe's > Best Buy > AJ Madison, Samsung Best Buy first).
+  function otherStores(brand, cur) {
+    var order = E.storeOrder(brand), pos = function (s) { var i = order.indexOf(s); return i < 0 ? order.length : i; };
+    return SKEYS.filter(function (s) { return s !== cur; }).sort(function (a, b) { return pos(a) - pos(b); });
+  }
   // Customized = other models than the pick shown; the same four at another store isn't.
   function isCustom(p) { var s = state.swaps[p.brand]; return !!s && !sameModels(s, baseItems(p)); }
   function pkgOf(brand) { return state.res.packages.filter(function (p) { return p.brand === brand; })[0]; }
@@ -1221,7 +1272,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   function alsoHTML(it, brand) {
     if (!MULTI) return '';
     var at = E.storesFor(DATA, it, SKEYS);
-    return SKEYS.filter(function (s) { return s !== it.store && at[s] && (!state.f.stores || state.f.stores.has(s)); }).map(function (s) {
+    return otherStores(it.brand, it.store).filter(function (s) { return at[s] && (!state.f.stores || state.f.stores.has(s)); }).map(function (s) {
       var o = at[s];
       return '<a class="also" href="' + esc(o.affiliate_url || o.url) + '" target="_blank" rel="sponsored noopener" data-ga="product" data-store="' + esc(s) + '" data-cat="' + o.cat +
         '" data-model="' + esc(o.model) + '" data-brand="' + esc(brand) + '">' + esc(sname(s)) + ' ' + money(o.price) + '</a>';
@@ -1260,7 +1311,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   function cmpHTML(p, items) {
     if (!MULTI) return '';
     var cur = items[0].store, rows = [];
-    [cur].concat(SKEYS.filter(function (s) { return s !== cur; })).forEach(function (s) {
+    [cur].concat(otherStores(p.brand, cur)).forEach(function (s) {
       if (state.f.stores && !state.f.stores.has(s)) return;
       var same = s === cur ? items : E.sameAt(DATA, items, s), pick = (p.atStores || {})[s];
       if (same) rows.push({ s: s, label: s === cur ? sname(s) : sname(s) + ' · same 4', total: E.describe(same, DATA, state.bundles, state.rebates).total, act: s === cur ? '' : 'switch' });
