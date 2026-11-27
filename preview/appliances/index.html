@@ -530,6 +530,12 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
 .det-offers .o { display: flex; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid var(--rule); border-radius: var(--radius-sm); padding: 8px 12px; }
 .det-offers .o b { font-size: 20px; font-weight: 900; font-stretch: 80%; font-variant-numeric: tabular-nums; }
 .det-offers .o .buy { min-height: 40px; }
+/* Ben, 2026-11-27: every model has its own page (build_finder_pages.py) for search engines; titles, Details
+   and the footer link to them. */
+.fr-main a.ttl { color: var(--text); text-decoration: none; }
+.fr-main a.ttl:hover { color: var(--blue-hover); text-decoration: underline; }
+.det-page { justify-self: start; font-weight: 800; }
+.foot-cats { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 15px; }
 @media (max-width: 720px) {
   .hero.slim .in { grid-template-columns: minmax(0, 1fr); }
   .hero.slim .hero-art { display: none; }
@@ -648,6 +654,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
       <h3>About the prices</h3>
       <ul id="notes"></ul>
     </section>
+    <nav class="foot-cats" aria-label="Rankings"><a href="washers/">Best Washers</a><a href="dryers/">Best Dryers</a><a href="refrigerators/">Best Refrigerators</a><a href="ranges/">Best Ranges</a><a href="cooktops/">Best Cooktops</a><a href="wall-ovens/">Best Wall Ovens</a><a href="dishwashers/">Best Dishwashers</a><a href="microwaves/">Best Microwaves</a></nav>
     <div class="legal">
       <span>We earn a commission on purchases through our links. Scores are our own. <a href="/privacy.html">Privacy</a> · © Ben’s Appliances</span>
       <span>Photos and specs: manufacturer, via Skulytics. Prices, ratings and scores: ours.</span>
@@ -665,7 +672,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
   <div id="detBody"></div>
 </dialog>
 
-<script type="application/json" id="finder-index">{"built":"2026-11-18T18:19:48+00:00","rules":{"min_reviews":100,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":133,"brands":12,"photos":119,"stores":{"lowes":104,"bestbuy":119,"ajmadison":81}},{"cat":"dryer","label":"Dryers","count":167,"brands":15,"photos":162,"stores":{"lowes":132,"bestbuy":144,"ajmadison":132}},{"cat":"refrigerator","label":"Refrigerators","count":321,"brands":24,"photos":268,"stores":{"lowes":183,"bestbuy":224,"ajmadison":180}},{"cat":"range","label":"Ranges","count":357,"brands":31,"photos":298,"stores":{"lowes":276,"bestbuy":207,"ajmadison":219}},{"cat":"cooktop","label":"Cooktops","count":66,"brands":12,"photos":66,"stores":{"lowes":53,"bestbuy":64,"ajmadison":42}},{"cat":"wall_oven","label":"Wall Ovens","count":95,"brands":12,"photos":89,"stores":{"lowes":57,"bestbuy":93,"ajmadison":49}},{"cat":"dishwasher","label":"Dishwashers","count":120,"brands":18,"photos":115,"stores":{"lowes":109,"bestbuy":94,"ajmadison":95}},{"cat":"microwave","label":"Microwaves","count":141,"brands":29,"photos":128,"stores":{"lowes":107,"bestbuy":103,"ajmadison":102}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
+<script type="application/json" id="finder-index">{"built":"2026-11-26T20:30:40+00:00","rules":{"min_reviews":100,"min_fridge_cuft":14,"limited_below":250},"categories":[{"cat":"washer","label":"Washers","count":132,"brands":12,"photos":118,"stores":{"lowes":104,"bestbuy":117,"ajmadison":85}},{"cat":"dryer","label":"Dryers","count":167,"brands":15,"photos":162,"stores":{"lowes":132,"bestbuy":142,"ajmadison":137}},{"cat":"refrigerator","label":"Refrigerators","count":320,"brands":24,"photos":269,"stores":{"lowes":183,"bestbuy":217,"ajmadison":191}},{"cat":"range","label":"Ranges","count":356,"brands":31,"photos":296,"stores":{"lowes":276,"bestbuy":203,"ajmadison":209}},{"cat":"cooktop","label":"Cooktops","count":66,"brands":12,"photos":65,"stores":{"lowes":53,"bestbuy":64,"ajmadison":46}},{"cat":"wall_oven","label":"Wall Ovens","count":95,"brands":12,"photos":89,"stores":{"lowes":57,"bestbuy":93,"ajmadison":49}},{"cat":"dishwasher","label":"Dishwashers","count":120,"brands":18,"photos":115,"stores":{"lowes":109,"bestbuy":92,"ajmadison":99}},{"cat":"microwave","label":"Microwaves","count":140,"brands":29,"photos":127,"stores":{"lowes":107,"bestbuy":101,"ajmadison":100}}],"stores":{"lowes":{"name":"Lowe’s"},"bestbuy":{"name":"Best Buy"},"ajmadison":{"name":"AJ Madison"}}}</script>
 <script>
 (function () {
   'use strict';
@@ -813,6 +820,13 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     return out;
   }
 
+  // Each model family's own page (build_finder_pages.py: CATS folders, slugify(brand + family); keep these in step).
+  var FOLDERS = { washer: 'washers', dryer: 'dryers', refrigerator: 'refrigerators', range: 'ranges', cooktop: 'cooktops',
+                  wall_oven: 'wall-ovens', dishwasher: 'dishwashers', microwave: 'microwaves' };
+  function pagePath(it) {
+    return FOLDERS[it.cat] + '/' + String(it.brand + ' ' + it.family).normalize('NFKD').replace(/[^\x00-\x7f]/g, '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '/';
+  }
   // The store's affiliate link is the href itself (stores ban masking or redirecting).
   function buy(it, o, cls, label) {
     return '<a class="' + cls + '" href="' + esc(o.aff || o.url) + '" target="_blank" rel="sponsored noopener" data-ga="product" data-store="' + esc(o.s) +
@@ -833,7 +847,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
     var offers = offersFor(it), o = offers[0], sale = o.was && o.was > o.price;
     return '<article class="fr" id="row-' + esc(it.id) + '">' +
       '<div class="fr-rank">#' + rankOf(it) + '</div>' + photo(it, o.model) +
-      '<div class="fr-main"><div class="ttl"><b>' + esc(it.brand) + '</b> ' + esc(it.name) + '</div>' +
+      '<div class="fr-main"><a class="ttl" href="' + esc(pagePath(it)) + '"><b>' + esc(it.brand) + '</b> ' + esc(it.name) + '</a>' +
         '<div class="mdl">Model # ' + esc(o.model) + ' · ' + esc(cap1(o.finish)) +
           (it.finishes.length > 1 ? ' · ' + it.finishes.length + ' finishes' : '') + '</div>' +
         '<div class="specs">' + specBits(it).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
@@ -995,6 +1009,7 @@ dialog::backdrop { background: rgba(10, 20, 40, 0.5); }
         ((d.size || []).length ? '<div><h4 class="det-h">Size</h4><div class="det-size">' + d.size.map(function (x) { return '<div><small>' + esc(x[0]) + '</small><b>' + esc(x[1]) + '</b></div>'; }).join('') + '</div></div>' : '') +
         ((d.hl || []).length ? '<div><h4 class="det-h">Highlights</h4><ul class="det-hl">' + d.hl.map(function (x) { return '<li><b>' + esc(x[0]) + '</b>' + (x[1] ? '<br><span>' + esc(x[1]) + '</span>' : '') + '</li>'; }).join('') + '</ul></div>' : '') +
         ((d.docs || []).length ? '<div><h4 class="det-h">Documents</h4><div class="det-docs">' + d.docs.map(function (x) { return '<a href="' + esc(x[1]) + '" target="_blank" rel="noopener">' + esc(x[0]) + (x[2] ? '<small>PDF, ' + esc(x[2]) + '</small>' : '') + '</a>'; }).join('') + '</div></div>' : '') +
+        '<a class="det-page" href="' + esc(pagePath(it)) + '">Full page: specs and compare →</a>' +
       '</div>' +
       ((d.spec || []).length ? '<div class="det-specs">' + d.spec.map(function (sec) {
         return '<section><h4>' + esc(sec[0]) + '</h4><dl>' + sec[1].map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('') + '</dl></section>';
